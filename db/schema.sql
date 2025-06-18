@@ -1,0 +1,105 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL UNIQUE,
+  login TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS workers (
+  id SERIAL UNIQUE,
+  id_user INT UNIQUE NOT NULL REFERENCES users(id),
+  uuid TEXT UNIQUE NOT NULL,
+  fullname TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  avg_ratings INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+  id SERIAL UNIQUE,
+  id_user INT UNIQUE NOT NULL REFERENCES users(id),
+  uuid TEXT UNIQUE NOT NULL,
+  fullname TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  avg_ratings INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reports_workers (
+  id SERIAL UNIQUE,
+  id_reported_worker INT NOT NULL REFERENCES workers(id),
+  tags TEXT ARRAY NOT NULL,
+  description TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  revoked BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS reports_customers (
+  id SERIAL UNIQUE,
+  id_reported_customer INT NOT NULL REFERENCES customers(id),
+  tags TEXT ARRAY NOT NULL,
+  description TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  revoked BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS phones (
+  id SERIAL UNIQUE,
+  id_worker INT NULL REFERENCES workers(id),
+  id_customer INT NULL REFERENCES customers(id),
+  phone_number TEXT NOT NULL,
+  area_code TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS phones (
+  id SERIAL UNIQUE,
+  id_worker INT NULL REFERENCES workers(id),
+  id_customer INT NULL REFERENCES customers(id),
+  email TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS addresses (
+  id SERIAL UNIQUE,
+  id_worker INT NULL REFERENCES workers(id),
+  id_customer INT NULL REFERENCES customers(id),
+  address TEXT NOT NULL,
+  address_number TEXT NOT NULL,
+  city TEXT NOT NULL,
+  uf TEXT NOT NULL,
+  country TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_services (
+  id SERIAL UNIQUE,
+  id_worker INT NOT NULL REFERENCES workers(id),
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  available BOOLEAN NOT NULL DEFAULT TRUE,
+  qtdAvailable INT DEFAULT NULL,
+  is_service BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL UNIQUE,
+  id_product_service INT NOT NULL REFERENCES product_services(id),
+  id_customer INT NOT NULL REFERENCES customers(id),
+  requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deployed_at TIMESTAMP DEFAULT NULL,
+  description TEXT NOT NULL,
+  id_worker_addr INT DEFAULT NULL REFERENCES addresses(id),
+  id_customer_addr INT DEFAULT NULL REFERENCES addresses(id),
+  is_online BOOLEAN DEFAULT TRUE,
+  qtd INT NOT NULL,
+  qtd_by_time INT NOT NULL,
+  customer_rating INT NOT NULL,
+  customer_feedback TEXT NOT NULL
+);

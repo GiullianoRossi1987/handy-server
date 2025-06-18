@@ -1,0 +1,12 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: docker
+      PG_USER: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: teste
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 6611:5432
