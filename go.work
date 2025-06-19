@@ -7,4 +7,5 @@ use ./repository
 use (
 	.
 	./config
+	./types
 )

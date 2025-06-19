@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	types "types/config"
+
 	"github.com/joho/godotenv"
 )
 
@@ -15,19 +17,12 @@ func GetEnv(key string) string {
 	return os.Getenv(key)
 }
 
-type PsConfig struct {
-	Host     string
-	Username string
-	Password string
-	Db       string
-}
-
-func GetConfigByEnv() PsConfig {
+func GetConfigByEnv() types.PsConfig {
 	hostname := GetEnv("HOSTNAME")
 	username := GetEnv("USERNAME")
 	password := GetEnv("PASSWORD")
 	database := GetEnv("DB")
-	return PsConfig{
+	return types.PsConfig{
 		Host:     hostname,
 		Username: username,
 		Password: password,
