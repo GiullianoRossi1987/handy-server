@@ -21,7 +21,7 @@ func GetConfigByEnv() types.PsConfig {
 	hostname := GetEnv("HOSTNAME")
 	username := GetEnv("USERNAME")
 	password := GetEnv("PASSWORD")
-	database := GetEnv("DB")
+	database := GetEnv("DATABASE")
 	return types.PsConfig{
 		Host:     hostname,
 		Username: username,

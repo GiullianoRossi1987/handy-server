@@ -10,9 +10,3 @@ services:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 6611:5432
-  go:
-    image: golang:latest
-    build: ./Dockerfile
-    depends_on:
-      - db
-    command: go run src/main.go

@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func generateConnection(config types.PsConfig) *pgx.Conn {
-	pSqlInfo := fmt.Sprintf("host=%s;username=%s;password=%s;db=%s", config.Host, config.Username, config.Password, config.Db)
+func GenerateConnection(config types.PsConfig) *pgx.Conn {
+	pSqlInfo := fmt.Sprintf("postgresql://%s:%s@%s:6611/%s", config.Username, config.Password, config.Host, config.Db)
 	psql, err := pgx.Connect(context.Background(), pSqlInfo)
 	if err != nil {
 		panic(err)
