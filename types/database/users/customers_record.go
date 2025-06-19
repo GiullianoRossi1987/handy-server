@@ -4,7 +4,7 @@ type CustomerRecord struct {
 	Id          int
 	UserId      int
 	UUID        string
-	fullname    string
-	active      bool
-	avg_ratings float32
+	Fullname    string
+	Active      bool
+	Avg_ratings float32
 }
