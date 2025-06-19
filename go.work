@@ -2,10 +2,9 @@ go 1.24.4
 
 use ./pkg
 
-use ./repository
-
 use (
 	.
 	./config
 	./types
+	./utils
 )
