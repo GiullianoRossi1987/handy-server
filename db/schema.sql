@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS workers (
   uuid TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT TRUE,
-  avg_ratings INT NOT NULL
+  avg_ratings DOUBLE NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS customers (
   uuid TEXT UNIQUE NOT NULL,
   fullname TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT TRUE,
-  avg_ratings INT NOT NULL
+  avg_ratings DOUBLE NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS reports_workers (
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS product_services (
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   available BOOLEAN NOT NULL DEFAULT TRUE,
-  qtdAvailable INT DEFAULT NULL,
+  qtdAvailable DOUBLE DEFAULT NULL,
   is_service BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS orders (
   id_worker_addr INT DEFAULT NULL REFERENCES addresses(id),
   id_customer_addr INT DEFAULT NULL REFERENCES addresses(id),
   is_online BOOLEAN DEFAULT TRUE,
-  qtd INT NOT NULL,
-  qtd_by_time INT NOT NULL,
-  customer_rating INT NOT NULL,
+  qtd DOUBLE NOT NULL,
+  qtd_by_time DOUBLE NOT NULL,
+  customer_rating DOUBLE NOT NULL,
   customer_feedback TEXT NOT NULL
 );
