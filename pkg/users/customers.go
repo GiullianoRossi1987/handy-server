@@ -40,7 +40,7 @@ func DeleteCustomer(id int32, conn *pgx.Conn) {
 
 func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgx.Conn) types.CustomerRecord {
 	commandTag, err := conn.Exec(context.Background(),
-		"UPDATE FROM customers SET fullname = $1, active = $2 WHERE id = $3;",
+		"UPDATE FROM customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
 		newDataRecord.Fullname, newDataRecord.Active, newDataRecord.Id)
 	utils.CheckRowsAndError(commandTag, &err, 1)
 	return newDataRecord
@@ -52,4 +52,8 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgx.Conn) ty
 		newDataRecord.Avg_ratings, newDataRecord.Id)
 	utils.CheckRowsAndError(commandTag, &err, 1)
 	return newDataRecord
+}
+
+func DoesCustomerExists(customerId int32, conn *pgx.Conn) bool {
+	return GetCustomerById(customerId, conn) != nil
 }

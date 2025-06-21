@@ -42,7 +42,7 @@ func DeleteWorker(id int32, conn *pgx.Conn) {
 
 func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgx.Conn) types.WorkersRecord {
 	commandTag, err := conn.Exec(context.Background(),
-		"UPDATE FROM workers SET fullname = $1, active = $2 WHERE id = $3;",
+		"UPDATE FROM workers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
 		newDataRecord.Fullname, newDataRecord.Active, newDataRecord.Id)
 	utils.CheckRowsAndError(commandTag, &err, 1)
 	return newDataRecord
@@ -54,4 +54,8 @@ func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgx.Conn) types
 		newDataRecord.Avg_ratings, newDataRecord.Id)
 	utils.CheckRowsAndError(commandTag, &err, 1)
 	return newDataRecord
+}
+
+func DoesWorkerExists(workerId int32, conn *pgx.Conn) bool {
+	return GetWorkerById(workerId, conn) != nil
 }
