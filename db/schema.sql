@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS emails (
   id_worker INT NULL REFERENCES workers(id),
   id_customer INT NULL REFERENCES customers(id),
   email TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT TRUE,
+  active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS addresses (
   city TEXT NOT NULL,
   uf TEXT NOT NULL,
   country TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT TRUE,
+  active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS product_services (
   description TEXT NOT NULL,
   available BOOLEAN NOT NULL DEFAULT TRUE,
   qtdAvailable DOUBLE DEFAULT NULL,
-  is_service BOOLEAN DEFAULT TRUE,
+  service BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -104,9 +104,10 @@ CREATE TABLE IF NOT EXISTS orders (
   description TEXT NOT NULL,
   id_worker_addr INT DEFAULT NULL REFERENCES addresses(id),
   id_customer_addr INT DEFAULT NULL REFERENCES addresses(id),
-  is_online BOOLEAN DEFAULT TRUE,
-  qtd DOUBLE NOT NULL,
-  qtd_by_time DOUBLE NOT NULL,
-  customer_rating DOUBLE NOT NULL,
-  customer_feedback TEXT NOT NULL
+  online BOOLEAN DEFAULT TRUE,
+  quantity DOUBLE NOT NULL DEFAULT 1,
+  quantity_by_time DOUBLE NOT NULL DEFAULT 1,
+  total_price DOUBLE NOT NULL,
+  customer_rating DOUBLE DEFAULT NULL,
+  customer_feedback TEXT DEFAULT NULL
 );
