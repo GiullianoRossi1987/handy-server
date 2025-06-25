@@ -3,64 +3,133 @@ package pkg
 import (
 	"context"
 	types "types/database/satellites"
-	"utils"
+	errors "types/errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetEmailById(emailId int32, conn *pgx.Conn) *types.EmailRecord {
+func GetEmailById(emailId int32, conn *pgxpool.Pool) (*types.EmailRecord, error) {
 	var email *types.EmailRecord
 	err := conn.QueryRow(context.Background(), "SELECT * FROM emails WHERE id = $1;", emailId).Scan(email)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return email
+	return email, nil
 }
 
-func GetCustomerEmails(customerId int32, conn *pgx.Conn) []types.EmailRecord {
+func GetCustomerEmails(customerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_customer = $1;", customerId)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	emails, errCol := pgx.CollectRows(rows, pgx.RowTo[types.EmailRecord])
+	emails, errCol := pgx.CollectRows(rows, pgx.RowToStructByPos[types.EmailRecord])
 	if errCol != nil {
-		panic(errCol)
+		return nil, err
 	}
-	return emails
+	return emails, nil
 }
 
-func GetWorkerEmails(workerId int32, conn *pgx.Conn) []types.EmailRecord {
+func GetWorkerEmails(workerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_worker = $1;", workerId)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	emails, errCol := pgx.CollectRows(rows, pgx.RowTo[types.EmailRecord])
+	emails, errCol := pgx.CollectRows(rows, pgx.RowToStructByPos[types.EmailRecord])
 	if errCol != nil {
-		panic(errCol)
+		return nil, err
 	}
-	return emails
+	return emails, nil
 }
 
-func AddEmail(email types.EmailRecord, conn *pgx.Conn) {
+func AddEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
 	commandTag, err := conn.Exec(context.Background(),
 		"INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3);",
 		email.IdWorker, email.IdCustomer, email.Email,
 	)
-	utils.CheckRowsAndError(commandTag, &err, 1)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "insert",
+			Table:                "emails",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
 }
 
-func DeleteEmail(emailId int32, conn *pgx.Conn) {
+func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
 	commandTag, err := conn.Exec(context.Background(),
 		"DELETE FROM emails WHERE id = $1;",
 		emailId,
 	)
-	utils.CheckRowsAndError(commandTag, &err, 1)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete",
+			Table:                "emails",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return err
 }
 
-func UpdateEmail(email types.EmailRecord, conn *pgx.Conn) {
-	commandTag, err := conn.Exec(context.Background(),
+func UpdateEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
 		"UPDATE emails SET id_worker = $1, id_customer = $2, email = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP() WHERE id = $5;",
-		email.IdWorker, email.IdCustomer, email.Email, email.Active, email.Id,
+		email.IdWorker,
+		email.IdCustomer,
+		email.Email,
+		email.Active,
+		email.Id,
 	)
-	utils.CheckRowsAndError(commandTag, &err, 1)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete",
+			Table:                "emails",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
 }

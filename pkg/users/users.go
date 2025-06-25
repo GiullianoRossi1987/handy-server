@@ -3,35 +3,108 @@ package pkg
 import (
 	"context"
 	types "types/database/users"
-	utils "utils"
+	errors "types/errors"
 
 	"github.com/jackc/pgx/v5"
 )
 
-func AddUser(record types.UsersRecord, connection *pgx.Conn) {
-	commandTag, err := connection.Exec(context.Background(),
-		"INSERT INTO", record.Login, record.Password)
-	utils.CheckRowsAndError(commandTag, &err, 1)
-}
-
-func GetUserByLogin(login string, connection *pgx.Conn) *types.UsersRecord {
-	var result *types.UsersRecord
-	err := connection.QueryRow(context.Background(), "SELECT * FROM users WHERE login = $1", login).Scan(&result)
+func AddUser(record types.UsersRecord, conn *pgx.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		panic(err)
+		return err
 	}
-	return result
+	commandTag, err := conn.Exec(
+		context.Background(),
+		"INSERT INTO users (login, password) VALUES ($1, $2)",
+		record.Login,
+		record.Password,
+	)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "insert",
+			Table:                "users",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
 }
 
-func DeleteUserById(id int, connection *pgx.Conn) {
-	commandTag, err := connection.Exec(context.Background(), "DELETE FROM user WHERE id = $1", id)
-	utils.CheckRowsAndError(commandTag, &err, 1)
+func GetUserByLogin(login string, connection *pgx.Conn) (*types.UsersRecord, error) {
+	var result *types.UsersRecord
+	if err := connection.QueryRow(
+		context.Background(),
+		"SELECT * FROM users WHERE login = $1",
+		login,
+	).Scan(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
-func UpdateUserById(newDataRow types.UsersRecord, connection *pgx.Conn) types.UsersRecord {
-	commandTag, err := connection.Exec(context.Background(),
+func DeleteUserById(id int, conn *pgx.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(context.Background(), "DELETE FROM user WHERE id = $1", id)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete",
+			Table:                "users",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func UpdateUserById(newDataRow types.UsersRecord, connection *pgx.Conn) error {
+	tx, err := connection.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := connection.Exec(
+		context.Background(),
 		"UPDATE user SET login = $1, password = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3",
-		newDataRow.Login, newDataRow.Password, newDataRow.Id)
-	utils.CheckRowsAndError(commandTag, &err, 1)
-	return *GetUserByLogin(newDataRow.Login, connection)
+		newDataRow.Login,
+		newDataRow.Password,
+		newDataRow.Id,
+	)
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "update",
+			Table:                "users",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+		}
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
 }
