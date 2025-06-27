@@ -181,7 +181,7 @@ func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
 			Table:                "orders",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", order.Id), // TODO: update indentifier in other methods
+			Identifier:           fmt.Sprintf("%d", order.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
