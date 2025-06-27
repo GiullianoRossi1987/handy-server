@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/reports"
 	errors "types/errors"
 
@@ -40,6 +41,7 @@ func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Pool) error {
 			Table:                "reports_worker",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", report.Id),
 		}
 	}
 	if err != nil {
@@ -66,6 +68,7 @@ func DeleteWorkerReportById(reportId int32, conn *pgxpool.Pool) error {
 			Table:                "reports_workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", reportId),
 		}
 	}
 	if err != nil {
@@ -107,6 +110,7 @@ func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Pool) error {
 			Table:                "reports_workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", report.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

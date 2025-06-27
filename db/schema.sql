@@ -109,5 +109,6 @@ CREATE TABLE IF NOT EXISTS orders (
   quantity_by_time DOUBLE NOT NULL DEFAULT 1,
   total_price DOUBLE NOT NULL,
   customer_rating DOUBLE DEFAULT NULL,
-  customer_feedback TEXT DEFAULT NULL
+  customer_feedback TEXT DEFAULT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP()
 );

@@ -115,3 +115,105 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
 	}
 	return nil
 }
+
+func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		"UPDATE orders SET deployed_at = CURRENT_TIMESTAMP(), updated_at = CURRENT_TIMESTAMP() WHERE id = $1;",
+		order_id,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "insert",
+			Table:                "orders",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           string(order_id),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`UPDATE orders SET 
+		description = $2, 
+		id_worker_addr = $3, 
+		id_customer_addr = $4,
+		quantity = $5,
+		quantity_by_time = $6,
+		total_price = $7
+		updated_at = CURRENT_TIMESTAMP() WHERE id = $1;`,
+		order.Id,
+		order.Description,
+		order.IdWorkerAddr,
+		order.IdCustomerAddr,
+		order.Quantity,
+		order.QuantityByTime,
+		order.TotalPrice,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "insert",
+			Table:                "orders",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", order.Id), // TODO: update indentifier in other methods
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteOrder(orderId int32, conn *pgxpool.Pool) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(context.Background(), `DELETE FROM orders WHERE id = $1;`, orderId)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "insert",
+			Table:                "orders",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", orderId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}

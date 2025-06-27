@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/users"
 	errors "types/errors"
 
@@ -48,6 +49,7 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
 			Table:                "customers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", customer.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -74,6 +76,7 @@ func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
 			Table:                "customers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -106,6 +109,7 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) erro
 			Table:                "customers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", newDataRecord.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -137,6 +141,7 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool
 			Table:                "customers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", newDataRecord.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

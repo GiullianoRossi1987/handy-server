@@ -6,9 +6,10 @@ import (
 	errors "types/errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func AddUser(record types.UsersRecord, conn *pgx.Conn) error {
+func AddUser(record types.UsersRecord, conn *pgxpool.Pool) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -39,7 +40,7 @@ func AddUser(record types.UsersRecord, conn *pgx.Conn) error {
 	return nil
 }
 
-func GetUserByLogin(login string, connection *pgx.Conn) (*types.UsersRecord, error) {
+func GetUserByLogin(login string, connection *pgxpool.Pool) (*types.UsersRecord, error) {
 	var result *types.UsersRecord
 	if err := connection.QueryRow(
 		context.Background(),
@@ -51,7 +52,7 @@ func GetUserByLogin(login string, connection *pgx.Conn) (*types.UsersRecord, err
 	return result, nil
 }
 
-func DeleteUserById(id int, conn *pgx.Conn) error {
+func DeleteUserById(id int, conn *pgxpool.Pool) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -77,7 +78,7 @@ func DeleteUserById(id int, conn *pgx.Conn) error {
 	return nil
 }
 
-func UpdateUserById(newDataRow types.UsersRecord, connection *pgx.Conn) error {
+func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Pool) error {
 	tx, err := connection.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

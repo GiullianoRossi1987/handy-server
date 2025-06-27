@@ -63,11 +63,13 @@ func AddAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 		address.Country,
 	)
 	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
 			Operation:            "Insert",
 			Table:                "addresses",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", address.Id),
 		}
 	}
 	if err != nil {
@@ -96,6 +98,7 @@ func DeleteAddress(addressId int32, conn *pgxpool.Pool) error {
 			Table:                "addresses",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", addressId),
 		}
 	}
 	if err != nil {
@@ -126,7 +129,14 @@ func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 		address.Country,
 	)
 	if commandTag.RowsAffected() != 1 {
-		err = fmt.Errorf("UPDATED MORE THAN ONE ADDRESS PER ACTION")
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "Insert",
+			Table:                "addresses",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", address.Id),
+		}
 	}
 	if err != nil {
 		tx.Rollback(context.Background())

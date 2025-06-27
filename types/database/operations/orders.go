@@ -17,4 +17,5 @@ type Order struct {
 	TotalPrice       float32
 	CustomerRating   *float32
 	CustomerFeedback *string
+	UpdatedAt        time.Time
 }

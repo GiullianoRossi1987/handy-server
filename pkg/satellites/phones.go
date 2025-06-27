@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/satellites"
 	errors "types/errors"
 
@@ -66,6 +67,7 @@ func AddPhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
 			Table:                "phones",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", phone.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -95,6 +97,7 @@ func DeletePhone(phoneId int32, conn *pgxpool.Pool) error {
 			Table:                "phones",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", phoneId),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -130,6 +133,7 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
 			Table:                "phones",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", phone.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

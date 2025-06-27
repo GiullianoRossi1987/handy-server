@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/users"
 	errors "types/errors"
 
@@ -48,6 +49,7 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Pool) error {
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", record.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -74,6 +76,7 @@ func DeleteWorker(id int32, conn *pgxpool.Pool) error {
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -102,6 +105,7 @@ func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) error {
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", newDataRecord.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -130,6 +134,7 @@ func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) e
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", newDataRecord.Id),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

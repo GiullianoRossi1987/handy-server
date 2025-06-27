@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/satellites"
 	errors "types/errors"
 
@@ -58,6 +59,7 @@ func AddEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
 			Table:                "emails",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", email.Id),
 		}
 	}
 	if err != nil {
@@ -87,6 +89,7 @@ func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
 			Table:                "emails",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", emailId),
 		}
 	}
 	if err != nil {
@@ -121,6 +124,7 @@ func UpdateEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
 			Table:                "emails",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", email.Id),
 		}
 	}
 	if err != nil {
