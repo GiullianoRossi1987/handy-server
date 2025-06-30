@@ -4,6 +4,7 @@ use (
 	.
 	./handlers
 	./pkg
+	./services
 	./types
 	./utils
 )
