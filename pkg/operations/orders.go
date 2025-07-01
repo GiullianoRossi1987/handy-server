@@ -62,20 +62,20 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
 	commandTag, err := conn.Exec(
 		context.Background(),
 		`INSERT INTO orders (
-			id_product_service, 
-			id_customer, 
-			requested_at, 
-			deployed_at, 
-			description, 
-			id_worker_addr, 
-			id_customer_addr, 
-			online, quantity, 
-			quantity_by_time, 
-			total_price, 
-			customer_rating, 
-			customer_feedback
-			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`,
+      id_product_service, 
+      id_customer, 
+      requested_at, 
+      deployed_at, 
+      description, 
+      id_worker_addr, 
+      id_customer_addr, 
+      online, quantity, 
+      quantity_by_time, 
+      total_price, 
+      customer_rating, 
+      customer_feedback
+      )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`,
 		order.IdProductService,
 		order.IdCustomer,
 		order.RequestedAt,
@@ -155,13 +155,13 @@ func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
 	commandTag, err := conn.Exec(
 		context.Background(),
 		`UPDATE orders SET 
-		description = $2, 
-		id_worker_addr = $3, 
-		id_customer_addr = $4,
-		quantity = $5,
-		quantity_by_time = $6,
-		total_price = $7
-		updated_at = CURRENT_TIMESTAMP() WHERE id = $1;`,
+    description = $2, 
+    id_worker_addr = $3, 
+    id_customer_addr = $4,
+    quantity = $5,
+    quantity_by_time = $6,
+    total_price = $7
+    updated_at = CURRENT_TIMESTAMP() WHERE id = $1;`,
 		order.Id,
 		order.Description,
 		order.IdWorkerAddr,
