@@ -14,6 +14,7 @@ type Address struct {
 	City          string     `json:"city" binding:"required"`
 	UF            string     `json:"uf" binding:"required"`
 	Country       string     `json:"country" binding:"required"`
+	Main          bool       `json:"main" binding:"required"`
 	Active        bool       `json:"active"`
 	CreatedAt     *time.Time `json:"created_at,omitempty"`
 	UpdatedAt     *time.Time `json:"updated_at,omitempty"`
