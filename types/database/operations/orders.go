@@ -8,6 +8,7 @@ type Order struct {
 	IdCustomer       int
 	RequestedAt      time.Time
 	DeployedAt       *time.Time
+	ScheduleTo       *time.Time
 	Description      string
 	IdWorkerAddr     *int
 	IdCustomerAddr   *int

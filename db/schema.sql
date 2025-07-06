@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS orders (
   id_product_service INT NOT NULL REFERENCES product_services(id),
   id_customer INT NOT NULL REFERENCES customers(id),
   requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  scheduled_to TIMESTAMP DEFAULT NULL,
   deployed_at TIMESTAMP DEFAULT NULL,
   description TEXT NOT NULL,
   id_worker_addr INT DEFAULT NULL REFERENCES addresses(id),

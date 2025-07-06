@@ -65,8 +65,9 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
       id_product_service, 
       id_customer, 
       requested_at, 
-      deployed_at, 
-      description, 
+      deployed_at,
+			scheduled_to, 
+      description,
       id_worker_addr, 
       id_customer_addr, 
       online, quantity, 
@@ -75,10 +76,11 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
       customer_rating, 
       customer_feedback
       )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`,
 		order.IdProductService,
 		order.IdCustomer,
 		order.RequestedAt,
+		order.ScheduleTo,
 		order.DeployedAt,
 		order.Description,
 		order.IdWorkerAddr,
@@ -123,7 +125,10 @@ func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE orders SET deployed_at = CURRENT_TIMESTAMP(), updated_at = CURRENT_TIMESTAMP() WHERE id = $1;",
+		`UPDATE orders SET 
+		deployed_at = CURRENT_TIMESTAMP(), 
+		updated_at = CURRENT_TIMESTAMP() 
+		WHERE id = $1;`,
 		order_id,
 	)
 	if err != nil {
@@ -156,14 +161,16 @@ func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
 		context.Background(),
 		`UPDATE orders SET 
     description = $2, 
-    id_worker_addr = $3, 
-    id_customer_addr = $4,
-    quantity = $5,
-    quantity_by_time = $6,
-    total_price = $7
+		scheduled_to = $3
+    id_worker_addr = $4, 
+    id_customer_addr = $5,
+    quantity = $6,
+    quantity_by_time = $7,
+    total_price = $8
     updated_at = CURRENT_TIMESTAMP() WHERE id = $1;`,
 		order.Id,
 		order.Description,
+		order.ScheduleTo,
 		order.IdWorkerAddr,
 		order.IdCustomerAddr,
 		order.Quantity,
