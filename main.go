@@ -17,5 +17,6 @@ func main() {
 	fmt.Println(config.Db)
 	router := gin.Default()
 	handlers.SetRouter(router)
+	router.POST("/test", handlers.TestResponse)
 	router.Run("localhost:8080")
 }

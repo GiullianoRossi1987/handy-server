@@ -1,6 +1,9 @@
 package types
 
-import serializables "types/serializables"
+import (
+	"time"
+	serializables "types/serializables"
+)
 
 type UpdateUserRequest struct {
 	Uuid      string                  `json:"uuid" binding:"required"`
@@ -9,4 +12,6 @@ type UpdateUserRequest struct {
 	Phones    []serializables.Phone   `json:"phones" binding:"required"`
 	Emails    []serializables.Email   `json:"emails" binding:"required"`
 	Addresses []serializables.Address `json:"addresses" binding:"required"`
+	CreatedAt *time.Time              `json:"-"`
+	UpdatedAt *time.Time              `json:"-"`
 }
