@@ -1,17 +1,14 @@
 package types
 
 import (
-	"time"
 	serializables "types/serializables"
 )
 
+// PUT REQUEST
 type UpdateUserRequest struct {
-	Uuid      string                  `json:"uuid" binding:"required"`
-	Fullname  string                  `json:"name"`
-	Active    bool                    `json:"active"`
+	Fullname  string                  `json:"name" binding:"required"`
+	Active    bool                    `json:"active" binding:"required"`
 	Phones    []serializables.Phone   `json:"phones" binding:"required"`
 	Emails    []serializables.Email   `json:"emails" binding:"required"`
 	Addresses []serializables.Address `json:"addresses" binding:"required"`
-	CreatedAt *time.Time              `json:"-"`
-	UpdatedAt *time.Time              `json:"-"`
 }
