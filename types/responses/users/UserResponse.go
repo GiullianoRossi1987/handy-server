@@ -1,0 +1,24 @@
+package types
+
+import (
+	"time"
+	db "types/database/users"
+)
+
+type UserResponseBody struct {
+	Id        int       `json:"id" binding:"required"`
+	Login     string    `json:"login" binding:"required"`
+	Password  string    `json:"password" binding:"required"`
+	CreatedAt time.Time `json:"created_at" binding:"required"`
+	UpdatedAt time.Time `json:"updated_at" binding:"required"`
+}
+
+func (urb *UserResponseBody) FromDatabase(record *db.UsersRecord) UserResponseBody {
+	return UserResponseBody{
+		Id:        record.Id,
+		Login:     record.Login,
+		Password:  record.Password,
+		CreatedAt: record.CreatedAt,
+		UpdatedAt: record.UpdatedAt,
+	}
+}
