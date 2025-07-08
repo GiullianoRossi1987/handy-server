@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"time"
+	db "types/database/satellites"
 )
 
 type Address struct {
@@ -20,7 +21,24 @@ type Address struct {
 	UpdatedAt     *time.Time `json:"updated_at,omitempty"`
 }
 
-func (email *Address) ToJSON() (string, error) {
-	val, err := json.Marshal(email)
+func (addr *Address) ToJSON() (string, error) {
+	val, err := json.Marshal(addr)
 	return string(val), err
+}
+
+func SerializeAddress(record db.AddressRecord) Address {
+	return Address{
+		Id:            int32(record.Id),
+		IdWorker:      new(int32),
+		IdCustomer:    new(int32),
+		Address:       "",
+		AddressNumber: "",
+		City:          "",
+		UF:            "",
+		Country:       "",
+		Main:          false,
+		Active:        false,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
+	}
 }

@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"time"
+	db "types/database/satellites"
 )
 
 type Phone struct {
@@ -19,4 +20,17 @@ type Phone struct {
 func (p *Phone) ToJSON() (string, error) {
 	val, err := json.Marshal(p)
 	return string(val), err
+}
+
+func SerializePhone(record db.PhoneRecord) Phone {
+	return Phone{
+		Id:         record.Id,
+		IdWorker:   record.IdWorker,
+		IdCustomer: record.IdCustomer,
+		PhoneNumer: record.PhoneNumber,
+		AreaCode:   record.AreaCode,
+		Active:     record.Active,
+		CreatedAt:  &record.CreatedAt,
+		UpdatedAt:  &record.UpdatedAt,
+	}
 }

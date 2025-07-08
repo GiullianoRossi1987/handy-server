@@ -3,9 +3,9 @@ package types
 import "time"
 
 type PhoneRecord struct {
-	Id          int
-	IdWorker    *int
-	IdCustomer  *int
+	Id          int32
+	IdWorker    *int32
+	IdCustomer  *int32
 	PhoneNumber string
 	AreaCode    string
 	Active      bool

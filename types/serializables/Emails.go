@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"time"
+	db "types/database/satellites"
 )
 
 type Email struct {
@@ -18,4 +19,16 @@ type Email struct {
 func (email *Email) ToJSON() (string, error) {
 	val, err := json.Marshal(email)
 	return string(val), err
+}
+
+func SerializeEmail(record db.EmailRecord) Email {
+	return Email{
+		Id:         record.Id,
+		IdWorker:   &record.IdWorker,
+		IdCustomer: &record.IdCustomer,
+		Email:      record.Email,
+		Active:     record.Active,
+		CreatedAt:  &record.CreatedAt,
+		UpdatedAt:  &record.UpdatedAt,
+	}
 }

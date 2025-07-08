@@ -3,8 +3,8 @@ package types
 import "time"
 
 type ProductService struct {
-	Id                int
-	IdWorker          int
+	Id                int32
+	IdWorker          int32
 	Name              string
 	Description       string
 	Available         bool
