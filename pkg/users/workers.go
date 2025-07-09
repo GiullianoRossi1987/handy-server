@@ -20,6 +20,16 @@ func GetWorkerById(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
 	return worker, nil
 }
 
+func GetWorkerByUUID(uuid string, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
+	var worker *types.WorkersRecord
+	err := conn.QueryRow(context.Background(),
+		"SELECT * FROM workers WHERE uuid = $1;", uuid).Scan(&worker)
+	if err != nil {
+		return nil, err
+	}
+	return worker, nil
+}
+
 func GetWorkerByUserId(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
 	var worker *types.WorkersRecord
 	err := conn.QueryRow(context.Background(),

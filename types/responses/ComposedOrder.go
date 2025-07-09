@@ -15,8 +15,8 @@ type ComposedOrderResponse struct {
 
 func SerializeComposedOrderResponse(order_record db.ComposedOrder) ComposedOrderResponse {
 	return ComposedOrderResponse{
-		Customer:   response_usr.SerializeCustomerResponse(order_record.Customer),
-		Worker:     response_usr.SerializeWorkerResponse(order_record.Worker),
+		Customer:   *response_usr.SerializeCustomerResponse(order_record.Customer),
+		Worker:     *response_usr.SerializeWorkerResponse(order_record.Worker),
 		UsingOrder: response_opr.SerializeOrderRecord(order_record.UsingOrder),
 	}
 }

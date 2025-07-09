@@ -18,6 +18,14 @@ func GetCustomerById(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error
 	return customer, nil
 }
 
+func GetCustomerByUUID(uuid string, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+	var customer *types.CustomerRecord
+	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE uuid = $1", uuid).Scan(customer); err != nil {
+		return nil, err
+	}
+	return customer, nil
+}
+
 func GetCustomerByUserId(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id_user = $1", id).Scan(customer); err != nil {
@@ -153,6 +161,14 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool
 
 func DoesCustomerExists(customerId int32, conn *pgxpool.Pool) (bool, error) {
 	res, err := GetCustomerById(customerId, conn)
+	if err != nil {
+		return false, err
+	}
+	return res != nil, nil
+}
+
+func DoesCustomerUUIDExists(uuid string, conn *pgxpool.Pool) (bool, error) {
+	res, err := GetCustomerByUUID(uuid, conn)
 	if err != nil {
 		return false, err
 	}
