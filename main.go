@@ -1,17 +1,22 @@
 package main
 
 import (
-	"config"
-	"pkg"
+	// "pkg"
+	// types "types/config"
+	"fmt"
+	"handlers"
+	types "types/config"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	db := config.GetConfigByEnv()
-	println(db.Host)
-	connection, err := pkg.GeneratePool(db)
-	if err != nil {
-		panic(err)
-	}
-	println("apparently connecting")
-	defer connection.Close()
+	config := types.PsConfig{}
+	config.FromEnv()
+	fmt.Println(config.Db)
+	router := gin.Default()
+	handlers.SetRouter(router)
+	router.POST("/test", handlers.TestResponse)
+	router.Run("localhost:8080")
 }

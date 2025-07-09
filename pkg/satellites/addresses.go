@@ -53,12 +53,22 @@ func AddAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"INSERT INTO addresses (id_worker, id_customer, address, address_number, city, uf, country) VALUES ($1,$2,$3,$4,$5,$6);",
+		`INSERT INTO addresses (
+			id_worker, 
+			id_customer, 
+			address, 
+			address_number, 
+			city, 
+			main,
+			uf, 
+			country) 
+		VALUES ($1,$2,$3,$4,$5,$6, $7);`,
 		address.IdWorker,
 		address.IdCustomer,
 		address.Address,
 		address.AddressNumber,
 		address.City,
+		address.Main,
 		address.UF,
 		address.Country,
 	)
@@ -119,7 +129,17 @@ func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE addresses id_worker = $1, id_customer = $2, address = $3, address_number = $4, city = $5, uf = $6, country = $8 WHERE id = $8;",
+		`UPDATE addresses SET 
+		 id_worker = $2, 
+		 id_customer = $3, 
+		 address = $4, 
+		 address_number = $5, 
+		 city = $6, 
+		 uf = $7, 
+		 country = $9,
+		 main = $10
+		 WHERE id = $1;`,
+		address.Id,
 		address.IdWorker,
 		address.IdCustomer,
 		address.Address,
@@ -127,6 +147,7 @@ func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 		address.City,
 		address.UF,
 		address.Country,
+		address.Main,
 	)
 	if commandTag.RowsAffected() != 1 {
 		tx.Rollback(context.Background())

@@ -11,6 +11,7 @@ type AddressRecord struct {
 	City          string
 	UF            string
 	Country       string
+	Main          bool
 	Active        bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time

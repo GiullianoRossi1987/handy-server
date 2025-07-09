@@ -1,10 +1,10 @@
 go 1.24.4
 
-use ./pkg
-
 use (
 	.
-	./config
+	./handlers
+	./pkg
+	./services
 	./types
 	./utils
 )

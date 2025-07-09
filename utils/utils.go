@@ -1,28 +1,23 @@
 package utils
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"os"
+	types "types/config"
 )
 
-func CheckRowsAndError(ct pgconn.CommandTag, err *error, max int64, min int64) error {
-	if min <= ct.RowsAffected() && ct.RowsAffected() <= max {
-		msg := fmt.Errorf("MORE ROWS AFFECTED THAN MAXIMMUM PERMITED %d", max)
-		return msg
+func GenerateDatabaseConfig() types.PsConfig {
+	return types.PsConfig{
+		Host:     os.Getenv("HOSTNAME"),
+		Username: os.Getenv("USERNAME"),
+		Password: os.Getenv("PASSWORD"),
+		Db:       os.Getenv("DATABASE"),
 	}
-	if err != nil {
-		return *err
-	}
-	return nil
 }
 
-func RollbackOnErr(tx pgx.Tx, ctx context.Context, err error) error {
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
+// Why GO doesnt ship without a '??' coalesce function? I gotta do this ¬~¬
+func Coalesce[T any](value *T, default_val T) T {
+	if value == nil {
+		return default_val
 	}
-	return nil
+	return *value
 }

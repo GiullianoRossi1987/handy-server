@@ -3,9 +3,9 @@ package types
 import "time"
 
 type EmailRecord struct {
-	Id         int
-	IdWorker   int
-	IdCustomer int
+	Id         int32
+	IdWorker   int32
+	IdCustomer int32
 	Email      string
 	Active     bool
 	CreatedAt  time.Time
