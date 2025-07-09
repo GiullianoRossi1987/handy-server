@@ -13,7 +13,7 @@ type UserResponseBody struct {
 	UpdatedAt time.Time `json:"updated_at" binding:"required"`
 }
 
-func (urb *UserResponseBody) FromDatabase(record *db.UsersRecord) UserResponseBody {
+func (urb *UserResponseBody) SerializeUserResponse(record *db.UsersRecord) UserResponseBody {
 	return UserResponseBody{
 		Id:        record.Id,
 		Login:     record.Login,

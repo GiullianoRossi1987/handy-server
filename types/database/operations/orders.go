@@ -3,15 +3,15 @@ package types
 import "time"
 
 type Order struct {
-	Id               int
-	IdProductService int
-	IdCustomer       int
+	Id               int32
+	IdProductService int32
+	IdCustomer       int32
 	RequestedAt      time.Time
 	DeployedAt       *time.Time
 	ScheduleTo       *time.Time
 	Description      string
-	IdWorkerAddr     *int
-	IdCustomerAddr   *int
+	IdWorkerAddr     *int32
+	IdCustomerAddr   *int32
 	Online           bool
 	Quantity         float32
 	QuantityByTime   float32

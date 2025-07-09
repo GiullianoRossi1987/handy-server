@@ -16,7 +16,7 @@ type WorkerResponseBody struct {
 	UpdatedAt time.Time `json:"updated_at" binding:"required"`
 }
 
-func (*WorkerResponseBody) FromDatabase(record db.WorkersRecord) WorkerResponseBody {
+func SerializeWorkerResponse(record db.WorkersRecord) WorkerResponseBody {
 	return WorkerResponseBody{
 		Id:        record.Id,
 		UserId:    record.UserId,
