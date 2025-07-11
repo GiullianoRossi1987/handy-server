@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetProductById(prodserId int32, conn *pgxpool.Pool) (*types.ProductService, error) {
+func GetProductById(prodserId int32, conn *pgxpool.Conn) (*types.ProductService, error) {
 	var result *types.ProductService
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM products_services WHERE id = $1;", prodserId).Scan(result); err != nil {
 		return nil, err
@@ -20,7 +20,7 @@ func GetProductById(prodserId int32, conn *pgxpool.Pool) (*types.ProductService,
 	return result, nil
 }
 
-func GetWorkerProdSer(workerId int32, conn *pgxpool.Pool) ([]types.ProductService, error) {
+func GetWorkerProdSer(workerId int32, conn *pgxpool.Conn) ([]types.ProductService, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM products_services WHERE id_worker = $1;", workerId)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func GetWorkerProdSer(workerId int32, conn *pgxpool.Pool) ([]types.ProductServic
 	return results, nil
 }
 
-func AddProdSer(prodser types.ProductService, conn *pgxpool.Pool) error {
+func AddProdSer(prodser types.ProductService, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func AddProdSer(prodser types.ProductService, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteProdSer(prodserId int32, conn *pgxpool.Pool) error {
+func DeleteProdSer(prodserId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func DeleteProdSer(prodserId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateProdSer(prodser types.ProductService, conn *pgxpool.Pool) error {
+func UpdateProdSer(prodser types.ProductService, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

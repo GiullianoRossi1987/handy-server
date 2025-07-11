@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetPhoneById(phoneId int32, conn *pgxpool.Pool) (*types.PhoneRecord, error) {
+func GetPhoneById(phoneId int32, conn *pgxpool.Conn) (*types.PhoneRecord, error) {
 	var phone *types.PhoneRecord
 	err := conn.QueryRow(context.Background(), "SELECT * FROM phones WHERE id = $1;", phoneId).Scan(&phone)
 	if err != nil {
@@ -19,7 +19,7 @@ func GetPhoneById(phoneId int32, conn *pgxpool.Pool) (*types.PhoneRecord, error)
 	return phone, nil
 }
 
-func GetWorkerPhones(workerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, error) {
+func GetWorkerPhones(workerId int32, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
 	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_worker = $1;", workerId)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func GetWorkerPhones(workerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, e
 	return phones, nil
 }
 
-func GetCustomerPhones(customerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, error) {
+func GetCustomerPhones(customerId int32, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
 	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_customer = $1;", customerId)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func GetCustomerPhones(customerId int32, conn *pgxpool.Pool) ([]types.PhoneRecor
 	return phones, nil
 }
 
-func AddPhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
+func AddPhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func AddPhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeletePhone(phoneId int32, conn *pgxpool.Pool) error {
+func DeletePhone(phoneId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func DeletePhone(phoneId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
+func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

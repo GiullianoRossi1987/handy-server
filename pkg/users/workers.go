@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetWorkerById(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
+func GetWorkerById(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
 	var worker *types.WorkersRecord
 	err := conn.QueryRow(context.Background(),
 		"SELECT * FROM workers WHERE id = $1;", id).Scan(&worker)
@@ -20,7 +20,7 @@ func GetWorkerById(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
 	return worker, nil
 }
 
-func GetWorkerByUUID(uuid string, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
+func GetWorkerByUUID(uuid string, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
 	var worker *types.WorkersRecord
 	err := conn.QueryRow(context.Background(),
 		"SELECT * FROM workers WHERE uuid = $1;", uuid).Scan(&worker)
@@ -30,7 +30,7 @@ func GetWorkerByUUID(uuid string, conn *pgxpool.Pool) (*types.WorkersRecord, err
 	return worker, nil
 }
 
-func GetWorkerByUserId(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, error) {
+func GetWorkerByUserId(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
 	var worker *types.WorkersRecord
 	err := conn.QueryRow(context.Background(),
 		"SELECT * FROM workers WHERE id_user = $1;", id).Scan(&worker)
@@ -40,7 +40,7 @@ func GetWorkerByUserId(id int32, conn *pgxpool.Pool) (*types.WorkersRecord, erro
 	return worker, nil
 }
 
-func AddWorker(record types.WorkersRecord, conn *pgxpool.Pool) error {
+func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteWorker(id int32, conn *pgxpool.Pool) error {
+func DeleteWorker(id int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func DeleteWorker(id int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) error {
+func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) error {
+func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -154,7 +154,7 @@ func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgxpool.Pool) e
 	return nil
 }
 
-func DoesWorkerExists(workerId int32, conn *pgxpool.Pool) (bool, error) {
+func DoesWorkerExists(workerId int32, conn *pgxpool.Conn) (bool, error) {
 	ex, err := GetWorkerById(workerId, conn)
 	if err != nil {
 		return false, err

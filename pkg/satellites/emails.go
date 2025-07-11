@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetEmailById(emailId int32, conn *pgxpool.Pool) (*types.EmailRecord, error) {
+func GetEmailById(emailId int32, conn *pgxpool.Conn) (*types.EmailRecord, error) {
 	var email *types.EmailRecord
 	err := conn.QueryRow(context.Background(), "SELECT * FROM emails WHERE id = $1;", emailId).Scan(email)
 	if err != nil {
@@ -19,7 +19,7 @@ func GetEmailById(emailId int32, conn *pgxpool.Pool) (*types.EmailRecord, error)
 	return email, nil
 }
 
-func GetCustomerEmails(customerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
+func GetCustomerEmails(customerId int32, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_customer = $1;", customerId)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func GetCustomerEmails(customerId int32, conn *pgxpool.Pool) ([]types.EmailRecor
 	return emails, nil
 }
 
-func GetWorkerEmails(workerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
+func GetWorkerEmails(workerId int32, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_worker = $1;", workerId)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func GetWorkerEmails(workerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, e
 	return emails, nil
 }
 
-func AddEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+func AddEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func AddEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
+func DeleteEmail(emailId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
 	return err
 }
 
-func UpdateEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+func UpdateEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

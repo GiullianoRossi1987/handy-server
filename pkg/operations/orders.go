@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetOrderById(orderId int, conn *pgxpool.Pool) (*types.Order, error) {
+func GetOrderById(orderId int, conn *pgxpool.Conn) (*types.Order, error) {
 	var order *types.Order
 	if err := conn.QueryRow(
 		context.Background(),
@@ -22,7 +22,7 @@ func GetOrderById(orderId int, conn *pgxpool.Pool) (*types.Order, error) {
 	return order, nil
 }
 
-func GetCustomerOrders(customerId int, conn *pgxpool.Pool) ([]types.Order, error) {
+func GetCustomerOrders(customerId int, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_customer = $1;",
@@ -38,7 +38,7 @@ func GetCustomerOrders(customerId int, conn *pgxpool.Pool) ([]types.Order, error
 	return orders, nil
 }
 
-func GetProductServiceOrders(productSericeId int, conn *pgxpool.Pool) ([]types.Order, error) {
+func GetProductServiceOrders(productSericeId int, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_product_service = $1;",
@@ -54,7 +54,7 @@ func GetProductServiceOrders(productSericeId int, conn *pgxpool.Pool) ([]types.O
 	return orders, nil
 }
 
-func AddOrder(order types.Order, conn *pgxpool.Pool) error {
+func AddOrder(order types.Order, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
+func DeployOrder(order_id int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
+func UpdateOrder(order types.Order, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -198,7 +198,7 @@ func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteOrder(orderId int32, conn *pgxpool.Pool) error {
+func DeleteOrder(orderId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

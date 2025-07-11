@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetWorkerReportsById(workerId int32, conn *pgxpool.Pool) ([]types.WorkerReport, error) {
+func GetWorkerReportsById(workerId int32, conn *pgxpool.Conn) ([]types.WorkerReport, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM reports_workers WHERE id_reported_worker = $1", workerId)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func GetWorkerReportsById(workerId int32, conn *pgxpool.Pool) ([]types.WorkerRep
 	return reports, nil
 }
 
-func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Pool) error {
+func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteWorkerReportById(reportId int32, conn *pgxpool.Pool) error {
+func DeleteWorkerReportById(reportId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func DeleteWorkerReportById(reportId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func GetWorkerReportById(reportId int32, conn *pgxpool.Pool) (*types.WorkerReport, error) {
+func GetWorkerReportById(reportId int32, conn *pgxpool.Conn) (*types.WorkerReport, error) {
 	var row *types.WorkerReport
 	if err := conn.QueryRow(
 		context.Background(),
@@ -92,7 +92,7 @@ func GetWorkerReportById(reportId int32, conn *pgxpool.Pool) (*types.WorkerRepor
 	return row, nil
 }
 
-func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Pool) error {
+func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

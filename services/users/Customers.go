@@ -2,15 +2,19 @@ package services
 
 import (
 	usr "pkg/users"
-	"services"
 	requests "types/requests/users"
 	responses "types/responses/users"
 
+	"context"
+
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerById(id int32) (*responses.CustomerResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+// FIXME implement pgxpool.Conn instead of connection based stuff
+// like: service.func(pool pgxpool.Pool, ...<params>)
+func GetCustomerById(pool *pgxpool.Pool, id int32) (*responses.CustomerResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -21,11 +25,12 @@ func GetCustomerById(id int32) (*responses.CustomerResponseBody, error) {
 	if data == nil {
 		return nil, nil
 	}
+	conn.Release()
 	return responses.SerializeCustomerResponse(*data), nil
 }
 
-func GetCustomerByUUID(uuid string) (*responses.CustomerResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -36,11 +41,12 @@ func GetCustomerByUUID(uuid string) (*responses.CustomerResponseBody, error) {
 	if data == nil {
 		return nil, nil
 	}
+	conn.Release()
 	return responses.SerializeCustomerResponse(*data), nil
 }
 
-func AddCustomer(req requests.UpdateUserRequest) (*responses.CustomerResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*responses.CustomerResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -49,12 +55,12 @@ func AddCustomer(req requests.UpdateUserRequest) (*responses.CustomerResponseBod
 	if err := usr.AddCustomer(*record, conn); err != nil {
 		return nil, err
 	}
-	conn.Close()
-	return GetCustomerByUUID(record.UUID)
+	conn.Release()
+	return GetCustomerByUUID(pool, record.UUID)
 }
 
-func UpdateCustomer(req requests.UpdateUserRequest, uuid string) (*responses.CustomerResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func UpdateCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest, uuid string) (*responses.CustomerResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +77,6 @@ func UpdateCustomer(req requests.UpdateUserRequest, uuid string) (*responses.Cus
 	if err := usr.UpdateCustomer(*record, conn); err != nil {
 		return nil, err
 	}
-	conn.Close()
-	return GetCustomerByUUID(uuid)
+	conn.Release()
+	return GetCustomerByUUID(pool, uuid)
 }

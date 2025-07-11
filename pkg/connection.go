@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// DEPRECATE
 func GenerateConnection(config types.PsConfig) (*pgx.Conn, error) {
 	pSqlInfo := fmt.Sprintf("postgresql://%s:%s@%s:6611/%s", config.Username, config.Password, config.Host, config.Db)
 	psql, err := pgx.Connect(context.Background(), pSqlInfo)
@@ -29,5 +30,4 @@ func GeneratePool(config types.PsConfig) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 	return psql, nil
-	// TODO: implement pool in the contents requests
 }

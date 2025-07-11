@@ -1,14 +1,16 @@
 package services
 
 import (
+	"context"
 	usr "pkg/users"
-	"services"
 	requests "types/requests/users"
 	responses "types/responses/users"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetUserByLogin(login string) (*responses.UserResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func GetUserByLogin(pool *pgxpool.Pool, login string) (*responses.UserResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -19,12 +21,12 @@ func GetUserByLogin(login string) (*responses.UserResponseBody, error) {
 	if data == nil {
 		return nil, nil
 	}
-	conn.Close()
+	conn.Release()
 	return responses.SerializeUserResponse(data), nil
 }
 
-func AddUser(req requests.CreateUserRequest) (*responses.UserResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*responses.UserResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -39,12 +41,12 @@ func AddUser(req requests.CreateUserRequest) (*responses.UserResponseBody, error
 	if data == nil {
 		return nil, nil
 	}
-	conn.Close()
+	conn.Release()
 	return responses.SerializeUserResponse(data), nil
 }
 
-func UpdateUser(req requests.CreateUserRequest, id int) (*responses.UserResponseBody, error) {
-	conn, err := services.GetConnByEnv()
+func UpdateUser(pool *pgxpool.Pool, req requests.CreateUserRequest, id int) (*responses.UserResponseBody, error) {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -60,18 +62,18 @@ func UpdateUser(req requests.CreateUserRequest, id int) (*responses.UserResponse
 	if data == nil {
 		return nil, nil
 	}
-	conn.Close()
+	conn.Release()
 	return responses.SerializeUserResponse(data), nil
 }
 
-func DeleteUser(id int) error {
-	conn, err := services.GetConnByEnv()
+func DeleteUser(pool *pgxpool.Pool, id int) error {
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return err
 	}
 	if err := usr.DeleteUserById(id, conn); err != nil {
 		return err
 	}
-	conn.Close()
+	conn.Release()
 	return nil
 }

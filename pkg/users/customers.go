@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerById(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+func GetCustomerById(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id = $1", id).Scan(customer); err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func GetCustomerById(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error
 	return customer, nil
 }
 
-func GetCustomerByUUID(uuid string, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+func GetCustomerByUUID(uuid string, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE uuid = $1", uuid).Scan(customer); err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func GetCustomerByUUID(uuid string, conn *pgxpool.Pool) (*types.CustomerRecord, 
 	return customer, nil
 }
 
-func GetCustomerByUserId(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+func GetCustomerByUserId(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id_user = $1", id).Scan(customer); err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func GetCustomerByUserId(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, e
 	return customer, nil
 }
 
-func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
+func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
+func DeleteCustomer(id int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil
@@ -94,7 +94,7 @@ func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) error {
+func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) erro
 	return nil
 }
 
-func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) error {
+func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool
 	return nil
 }
 
-func DoesCustomerExists(customerId int32, conn *pgxpool.Pool) (bool, error) {
+func DoesCustomerExists(customerId int32, conn *pgxpool.Conn) (bool, error) {
 	res, err := GetCustomerById(customerId, conn)
 	if err != nil {
 		return false, err
@@ -167,7 +167,7 @@ func DoesCustomerExists(customerId int32, conn *pgxpool.Pool) (bool, error) {
 	return res != nil, nil
 }
 
-func DoesCustomerUUIDExists(uuid string, conn *pgxpool.Pool) (bool, error) {
+func DoesCustomerUUIDExists(uuid string, conn *pgxpool.Conn) (bool, error) {
 	res, err := GetCustomerByUUID(uuid, conn)
 	if err != nil {
 		return false, err
