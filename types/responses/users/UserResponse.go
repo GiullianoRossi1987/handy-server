@@ -14,6 +14,9 @@ type UserResponseBody struct {
 }
 
 func SerializeUserResponse(record *db.UsersRecord) *UserResponseBody {
+	if record == nil {
+		return nil
+	}
 	return &UserResponseBody{
 		Id:        record.Id,
 		Login:     record.Login,

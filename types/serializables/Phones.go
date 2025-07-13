@@ -22,8 +22,11 @@ func (p *Phone) ToJSON() (string, error) {
 	return string(val), err
 }
 
-func SerializePhone(record db.PhoneRecord) Phone {
-	return Phone{
+func SerializePhone(record *db.PhoneRecord) *Phone {
+	if record == nil {
+		return nil
+	}
+	return &Phone{
 		Id:         record.Id,
 		IdWorker:   record.IdWorker,
 		IdCustomer: record.IdCustomer,

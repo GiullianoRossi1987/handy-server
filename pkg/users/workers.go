@@ -69,12 +69,19 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) error {
 	return nil
 }
 
-func DeleteWorker(id int32, conn *pgxpool.Conn) error {
+// TODO implement delete function using UUID instead of ID
+// AND CHANGE THIS FUNCTION TO DEACTIVATE THE WORKER AND THE USER
+func DeactivateWorker(id int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), "DELETE FROM workers WHERE id = $1;", id)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		WHERE id = $1;`,
+		id,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
@@ -102,7 +109,7 @@ func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Conn) error {
 		return err
 	}
 	commandTag, err := conn.Exec(context.Background(),
-		"UPDATE FROM workers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE workers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
 		newDataRecord.Fullname, newDataRecord.Active, newDataRecord.Id)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -131,7 +138,7 @@ func UpdateWorkerRating(newDataRecord types.WorkersRecord, conn *pgxpool.Conn) e
 		return err
 	}
 	commandTag, err := conn.Exec(context.Background(),
-		"UPDATE FROM workers SET avg_rating = $1 WHERE id = $2;",
+		"UPDATE workers SET avg_rating = $1 WHERE id = $2;",
 		newDataRecord.Avg_ratings, newDataRecord.Id)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -159,5 +166,5 @@ func DoesWorkerExists(workerId int32, conn *pgxpool.Conn) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return ex != nil, nil
+	return ex != nil && ex.Active, nil
 }

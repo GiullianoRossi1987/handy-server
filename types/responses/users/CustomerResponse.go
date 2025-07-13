@@ -20,7 +20,10 @@ type CustomerResponseBody struct {
 	Addresses []serial.Address `json:"Addresses,omitempty" binding:"required"`
 }
 
-func SerializeCustomerResponse(record db.CustomerRecord) *CustomerResponseBody {
+func SerializeCustomerResponse(record *db.CustomerRecord) *CustomerResponseBody {
+	if record == nil {
+		return nil
+	}
 	return &CustomerResponseBody{
 		Id:        record.Id,
 		UserId:    record.UserId,

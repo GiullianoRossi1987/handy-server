@@ -21,8 +21,11 @@ func (email *Email) ToJSON() (string, error) {
 	return string(val), err
 }
 
-func SerializeEmail(record db.EmailRecord) Email {
-	return Email{
+func SerializeEmail(record *db.EmailRecord) *Email {
+	if record == nil {
+		return nil
+	}
+	return &Email{
 		Id:         record.Id,
 		IdWorker:   &record.IdWorker,
 		IdCustomer: &record.IdCustomer,

@@ -170,3 +170,65 @@ func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Conn) error {
 	}
 	return nil
 }
+
+func DeleteAddrsFromCustomer(customerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM addresses WHERE customer_id = $1`,
+		customerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "addresses",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", customerId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteAddrsFromWorker(workerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM addresses WHERE worker_id = $1`,
+		workerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "addresses",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", workerId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}

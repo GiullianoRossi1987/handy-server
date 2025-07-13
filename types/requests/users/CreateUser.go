@@ -12,6 +12,9 @@ type CreateUserRequest struct {
 }
 
 func (rq *CreateUserRequest) ToRecord() *types.UsersRecord {
+	if rq == nil {
+		return nil
+	}
 	return &types.UsersRecord{
 		Id:        0,
 		Login:     rq.Login,

@@ -26,8 +26,11 @@ type OrderResponse struct {
 	UpdatedAt        time.Time  `json:"updated_at,omitempty"`
 }
 
-func SerializeOrderRecord(record db.Order) OrderResponse {
-	return OrderResponse{
+func SerializeOrderRecord(record *db.Order) *OrderResponse {
+	if record == nil {
+		return nil
+	}
+	return &OrderResponse{
 		Id:               record.Id,
 		IdProductService: record.IdProductService,
 		IdCustomer:       record.IdCustomer,

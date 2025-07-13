@@ -7,12 +7,10 @@ import (
 
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// FIXME implement pgxpool.Conn instead of connection based stuff
-// like: service.func(pool pgxpool.Pool, ...<params>)
+// TODO Change usage of ID to UUID's in API based queries
 func GetCustomerById(pool *pgxpool.Pool, id int32) (*responses.CustomerResponseBody, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
@@ -26,7 +24,7 @@ func GetCustomerById(pool *pgxpool.Pool, id int32) (*responses.CustomerResponseB
 		return nil, nil
 	}
 	conn.Release()
-	return responses.SerializeCustomerResponse(*data), nil
+	return responses.SerializeCustomerResponse(data), nil
 }
 
 func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResponseBody, error) {
@@ -42,7 +40,7 @@ func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResp
 		return nil, nil
 	}
 	conn.Release()
-	return responses.SerializeCustomerResponse(*data), nil
+	return responses.SerializeCustomerResponse(data), nil
 }
 
 func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*responses.CustomerResponseBody, error) {
@@ -51,7 +49,6 @@ func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*responses
 		return nil, err
 	}
 	record := req.ToCustomerRecord()
-	record.UUID = uuid.NewString()
 	if err := usr.AddCustomer(*record, conn); err != nil {
 		return nil, err
 	}

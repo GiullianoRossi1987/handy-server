@@ -101,7 +101,7 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) erro
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE FROM customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
 		newDataRecord.Fullname,
 		newDataRecord.Active,
 		newDataRecord.Id,
@@ -134,7 +134,7 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Conn
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE FROM customers SET avg_rating = $1 WHERE id = $2;",
+		"UPDATE customers SET avg_rating = $1 WHERE id = $2;",
 		newDataRecord.Avg_ratings,
 		newDataRecord.Id,
 	)

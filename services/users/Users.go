@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	usr "pkg/users"
+	"time"
 	requests "types/requests/users"
 	responses "types/responses/users"
 
@@ -18,11 +19,33 @@ func GetUserByLogin(pool *pgxpool.Pool, login string) (*responses.UserResponseBo
 	if err != nil {
 		return nil, err
 	}
-	if data == nil {
-		return nil, nil
-	}
 	conn.Release()
 	return responses.SerializeUserResponse(data), nil
+}
+
+func Login(pool *pgxpool.Pool, rq requests.LoginRequestBody) (*responses.LoginResponse, error) {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	data, err := usr.GetUserByLogin(rq.Login, conn)
+	if err != nil {
+		return nil, err
+	}
+	loggable, err := usr.IsUserLoggable(int32(data.Id), conn)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil && !loggable {
+		return nil, nil // [ ] Could change the parse functions to generate null if received null
+	}
+	conn.Release()
+	response := responses.LoginResponse{
+		Login:          rq.Login,
+		Success:        data.Password == rq.Password,
+		AttemptedLogin: time.Now(),
+	}
+	return &response, nil
 }
 
 func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*responses.UserResponseBody, error) {
@@ -34,12 +57,9 @@ func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*responses.Use
 	if err := usr.AddUser(*record, conn); err != nil {
 		return nil, err
 	}
-	data, err := usr.GetUserByLogin(record.Password, conn)
+	data, err := usr.GetUserByLogin(record.Login, conn)
 	if err != nil {
 		return nil, err
-	}
-	if data == nil {
-		return nil, nil
 	}
 	conn.Release()
 	return responses.SerializeUserResponse(data), nil
@@ -55,25 +75,10 @@ func UpdateUser(pool *pgxpool.Pool, req requests.CreateUserRequest, id int) (*re
 	if err := usr.UpdateUserById(*record, conn); err != nil {
 		return nil, err
 	}
-	data, err := usr.GetUserByLogin(record.Password, conn)
+	data, err := usr.GetUserByLogin(record.Login, conn)
 	if err != nil {
 		return nil, err
 	}
-	if data == nil {
-		return nil, nil
-	}
 	conn.Release()
 	return responses.SerializeUserResponse(data), nil
-}
-
-func DeleteUser(pool *pgxpool.Pool, id int) error {
-	conn, err := pool.Acquire(context.Background())
-	if err != nil {
-		return err
-	}
-	if err := usr.DeleteUserById(id, conn); err != nil {
-		return err
-	}
-	conn.Release()
-	return nil
 }

@@ -109,3 +109,26 @@ func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Conn) erro
 	}
 	return nil
 }
+
+func IsUserLoggable(userId int32, conn *pgxpool.Conn) (bool, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT
+			t1.*,
+			t2.*
+		FROM
+			users as u,
+			workers as w
+		WHERE
+			u.active AND w.active AND $1 in (u.id_user, w.id_user)
+		LIMIT 1;`,
+	)
+	if err != nil {
+		return false, err
+	}
+	items, err := rows.Values()
+	if err != nil {
+		return false, err
+	}
+	return len(items) > 0, nil
+}

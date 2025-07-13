@@ -1,3 +1,4 @@
+-- TODO create indexes for main search fields
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL UNIQUE,
   login TEXT UNIQUE NOT NULL,
