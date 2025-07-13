@@ -19,6 +19,9 @@ type Phone struct {
 
 func (p *Phone) ToJSON() (string, error) {
 	val, err := json.Marshal(p)
+	if err != nil {
+		return "nil", err
+	}
 	return string(val), err
 }
 

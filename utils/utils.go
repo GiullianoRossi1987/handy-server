@@ -21,3 +21,22 @@ func Coalesce[T any](value *T, default_val T) T {
 	}
 	return *value
 }
+
+// fucking hate the fact there there isn't FP in this language, why google why
+func MapCar[T any, U any](ia []T, of func(item T) U) []U {
+	mapped := make([]U, len(ia))
+	for k, i := range ia {
+		mapped[k] = of(i)
+	}
+	return mapped
+}
+
+func FilterCar[T any](pool []T, check func(i T) bool) []T {
+	filtered := []T{}
+	for _, i := range pool {
+		if check(i) {
+			filtered = append(filtered, i)
+		}
+	}
+	return filtered
+}

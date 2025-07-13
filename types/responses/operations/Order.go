@@ -23,7 +23,7 @@ type OrderResponse struct {
 	TotalPrice       float32    `json:"total" binding:"required"`
 	CustomerRating   *float32   `json:"rating,omitempty"`
 	CustomerFeedback *string    `json:"feedback,omitempty" binding:"required"`
-	UpdatedAt        time.Time  `json:"updated_at,omitempty"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 func SerializeOrderRecord(record *db.Order) *OrderResponse {

@@ -10,8 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerAddresses(customerId int32, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM addresses WHERE id_customer = $1;", customerId)
+func GetCustomerAddresses(uuid string, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT a.* FROM addresses AS a INNER JOIN customers AS c ON c.id = a.customer_id WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -22,8 +26,12 @@ func GetCustomerAddresses(customerId int32, conn *pgxpool.Conn) ([]types.Address
 	return addresses, nil
 }
 
-func GetWorkerAddresses(workerId int32, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM addresses WHERE id_worker = $1;", workerId)
+func GetWorkerAddresses(uuid string, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT a.* FROM addresses AS a INNER JOIN workers AS w ON w.id = a.customer_id WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}

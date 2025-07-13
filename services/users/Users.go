@@ -37,7 +37,7 @@ func Login(pool *pgxpool.Pool, rq requests.LoginRequestBody) (*responses.LoginRe
 		return nil, err
 	}
 	if data == nil && !loggable {
-		return nil, nil // [ ] Could change the parse functions to generate null if received null
+		return nil, nil
 	}
 	conn.Release()
 	response := responses.LoginResponse{

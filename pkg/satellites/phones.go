@@ -19,8 +19,12 @@ func GetPhoneById(phoneId int32, conn *pgxpool.Conn) (*types.PhoneRecord, error)
 	return phone, nil
 }
 
-func GetWorkerPhones(workerId int32, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
-	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_worker = $1;", workerId)
+func GetWorkerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM phones AS p INNER JOIN workers AS w ON w.id = p.id_worker WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +35,12 @@ func GetWorkerPhones(workerId int32, conn *pgxpool.Conn) ([]types.PhoneRecord, e
 	return phones, nil
 }
 
-func GetCustomerPhones(customerId int32, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
-	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_customer = $1;", customerId)
+func GetCustomerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM phones AS p INNER JOIN customers AS c ON c.id = p.id_worker WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +116,7 @@ func DeletePhone(phoneId int32, conn *pgxpool.Conn) error {
 	return nil
 }
 
+// TODO change common string queries to raw string queries
 func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -143,7 +152,6 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	return nil
 }
 
-// TODO: Implement delete worker phones (and other satellites too uwu) using SQL
 func DeletePhonesFromCustomer(customerId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

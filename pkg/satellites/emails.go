@@ -19,8 +19,12 @@ func GetEmailById(emailId int32, conn *pgxpool.Conn) (*types.EmailRecord, error)
 	return email, nil
 }
 
-func GetCustomerEmails(customerId int32, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_customer = $1;", customerId)
+func GetCustomerEmails(uuid string, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT e.* FROM emails AS e INNER JOIN customers AS c ON c.id = e.id_worker WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +35,12 @@ func GetCustomerEmails(customerId int32, conn *pgxpool.Conn) ([]types.EmailRecor
 	return emails, nil
 }
 
-func GetWorkerEmails(workerId int32, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_worker = $1;", workerId)
+func GetWorkerEmails(uuid string, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT e.* FROM emails AS e INNER JOIN workers AS w ON w.id = e.id_worker WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +57,7 @@ func AddEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 		return err
 	}
 	commandTag, err := conn.Exec(context.Background(),
-		"INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3);",
+		`INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3);`,
 		email.IdWorker, email.IdCustomer, email.Email,
 	)
 	if commandTag.RowsAffected() != 1 {
@@ -103,6 +111,7 @@ func DeleteEmail(emailId int32, conn *pgxpool.Conn) error {
 	return err
 }
 
+// TODO implement RETURNING SQL statements in insert queries
 func UpdateEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
