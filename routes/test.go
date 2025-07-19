@@ -1,7 +1,6 @@
-package handlers
+package routes
 
 import (
-	// "fmt"
 	"net/http"
 
 	// serializables "types/serializables"

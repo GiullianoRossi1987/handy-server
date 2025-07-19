@@ -108,7 +108,7 @@ func UpdateProdSer(prodser types.ProductService, conn *pgxpool.Conn) error {
 		 available = $4, 
 		 quantity_available = $5,
 		 service = $6,
-		 updated_at = CURRENT_TIMESTAMP(),
+		 updated_at = CURRENT_TIMESTAMP,
 		 WHERE id = $1`, // [ ] Probably could change it to a database trigger
 		prodser.Id,
 		prodser.Name,

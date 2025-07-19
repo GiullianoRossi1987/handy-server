@@ -109,7 +109,7 @@ func UpdateEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE emails SET id_worker = $1, id_customer = $2, email = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP() WHERE id = $5;",
+		"UPDATE emails SET id_worker = $1, id_customer = $2, email = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5;",
 		email.IdWorker,
 		email.IdCustomer,
 		email.Email,

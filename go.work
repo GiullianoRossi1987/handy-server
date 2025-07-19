@@ -2,8 +2,8 @@ go 1.24.4
 
 use (
 	.
-	./routes
 	./pkg
+	./routes
 	./services
 	./types
 	./utils

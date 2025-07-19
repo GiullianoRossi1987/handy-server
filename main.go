@@ -1,10 +1,11 @@
 package main
 
 import (
-	// "pkg"
+	"pkg"
 	// types "types/config"
 	"fmt"
-	"handlers"
+	routes "routes"
+	usr "routes/users"
 	types "types/config"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,14 @@ func main() {
 	config := types.PsConfig{}
 	config.FromEnv()
 	fmt.Println(config.Db)
+	pool, err := pkg.GeneratePool(config)
+	if err != nil {
+		panic(err)
+	}
 	router := gin.Default()
-	handlers.SetRouter(router)
-	router.POST("/test", handlers.TestResponse)
+	routes.SetRouter(router)
+	router.POST("/test", routes.TestResponse)
+	router.POST("/user/add", usr.AddUserHandler(pool))
+	router.GET("/user/get-login/:login", usr.GetUserByLogin(pool))
 	router.Run("localhost:8080")
 }

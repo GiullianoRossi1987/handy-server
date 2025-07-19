@@ -114,7 +114,7 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		`UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP()  WHERE id = $1;`,
+		`UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP  WHERE id = $1;`,
 		phone.IdWorker,
 		phone.IdCustomer,
 		phone.PhoneNumber,

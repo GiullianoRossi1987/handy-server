@@ -64,7 +64,7 @@ func DeactivateCustomer(uuid string, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP
 		WHERE uuid = $1::text;`,
 		uuid,
 	)
@@ -127,7 +127,7 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) erro
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3;",
 		newDataRecord.Fullname,
 		newDataRecord.Active,
 		newDataRecord.Id,

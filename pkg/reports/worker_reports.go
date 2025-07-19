@@ -91,7 +91,7 @@ func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE reports_workers SET revoked = $1, updated_at = CURRENT_TIMESTAMP() WHERE id = $2;",
+		"UPDATE reports_workers SET revoked = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;",
 		report.Revoked,
 		report.Id,
 	)

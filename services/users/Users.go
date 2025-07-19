@@ -16,10 +16,10 @@ func GetUserByLogin(pool *pgxpool.Pool, login string) (*responses.UserResponseBo
 		return nil, err
 	}
 	data, err := usr.GetUserByLogin(login, conn)
+	conn.Release()
 	if err != nil {
 		return nil, err
 	}
-	conn.Release()
 	return responses.SerializeUserResponse(data), nil
 }
 

@@ -32,12 +32,16 @@ func AddUser(record types.UsersRecord, conn *pgxpool.Conn) (*int32, error) {
 }
 
 func GetUserByLogin(login string, connection *pgxpool.Conn) (*types.UsersRecord, error) {
-	var result *types.UsersRecord
-	if err := connection.QueryRow(
+	rows, err := connection.Query(
 		context.Background(),
-		"SELECT * FROM users WHERE login = $1",
+		`SELECT * FROM users WHERE login = $1`,
 		login,
-	).Scan(&result); err != nil {
+	)
+	if err != nil {
+		return nil, err
+	}
+	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByPos[types.UsersRecord])
+	if err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -76,7 +80,7 @@ func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Conn) erro
 	}
 	commandTag, err := connection.Exec(
 		context.Background(),
-		"UPDATE user SET login = $1, password = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3",
+		"UPDATE user SET login = $1, password = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
 		newDataRow.Login,
 		newDataRow.Password,
 		newDataRow.Id,
