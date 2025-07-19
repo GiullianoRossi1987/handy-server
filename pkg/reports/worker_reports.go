@@ -73,15 +73,19 @@ func DeleteWorkerReportById(reportId int32, conn *pgxpool.Conn) error {
 }
 
 func GetWorkerReportById(reportId int32, conn *pgxpool.Conn) (*types.WorkerReport, error) {
-	var row *types.WorkerReport
-	if err := conn.QueryRow(
+	row, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM reports_workers WHERE id = $1;",
 		reportId,
-	).Scan(&row); err != nil {
+	)
+	if err != nil {
 		return nil, err
 	}
-	return row, nil
+	record, err := pgx.CollectOneRow(row, pgx.RowToStructByPos[types.WorkerReport])
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
 }
 
 func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {

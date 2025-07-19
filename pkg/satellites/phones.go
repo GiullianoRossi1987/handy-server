@@ -11,12 +11,15 @@ import (
 )
 
 func GetPhoneById(phoneId int32, conn *pgxpool.Conn) (*types.PhoneRecord, error) {
-	var phone *types.PhoneRecord
-	err := conn.QueryRow(context.Background(), "SELECT * FROM phones WHERE id = $1;", phoneId).Scan(&phone)
+	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id = $1;", phoneId)
 	if err != nil {
 		return nil, err
 	}
-	return phone, nil
+	phone, err := pgx.CollectOneRow(row, pgx.RowToStructByPos[types.PhoneRecord])
+	if err != nil {
+		return nil, err
+	}
+	return &phone, nil
 }
 
 func GetWorkerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {

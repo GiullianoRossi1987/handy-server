@@ -40,7 +40,7 @@ func GetUserByLogin(login string, connection *pgxpool.Conn) (*types.UsersRecord,
 	if err != nil {
 		return nil, err
 	}
-	result, err := pgx.CollectExactlyOneRow(rows, pgx.RowToAddrOfStructByPos[types.UsersRecord])
+	result, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByPos[types.UsersRecord])
 	if err != nil {
 		return nil, err
 	}

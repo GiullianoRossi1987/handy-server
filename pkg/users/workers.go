@@ -11,9 +11,15 @@ import (
 )
 
 func GetWorkerById(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE id = $1;", id).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM workers WHERE id = $1;",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}
@@ -21,9 +27,15 @@ func GetWorkerById(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
 }
 
 func GetWorkerByUUID(uuid string, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE uuid = $1;", uuid).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM workers WHERE uuid = $1;`,
+		uuid,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +43,15 @@ func GetWorkerByUUID(uuid string, conn *pgxpool.Conn) (*types.WorkersRecord, err
 }
 
 func GetWorkerByUserId(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE id_user = $1;", id).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM workers WHERE id_user = $1;`,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}

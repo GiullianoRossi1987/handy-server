@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerReportsById(workerId int32, conn *pgxpool.Conn) ([]types.CustomerReport, error) {
+func GetCustomerReportsByWorkerId(workerId int32, conn *pgxpool.Conn) ([]types.CustomerReport, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM reports_customer WHERE id_reported_worker = $1", workerId)
 	if err != nil {
 		return nil, err
@@ -72,15 +72,19 @@ func DeleteCustomerReportById(reportId int32, conn *pgxpool.Conn) error {
 }
 
 func GetCustomerReportById(reportId int32, conn *pgxpool.Conn) (*types.CustomerReport, error) {
-	var row *types.CustomerReport
-	if err := conn.QueryRow(
+	row, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM reports_customer WHERE id = $1;",
 		reportId,
-	).Scan(&row); err != nil {
+	)
+	if err != nil {
 		return nil, err
 	}
-	return row, nil
+	report, err := pgx.CollectOneRow(row, pgx.RowToStructByPos[types.CustomerReport])
+	if err != nil {
+		return nil, err
+	}
+	return &report, nil
 }
 
 func RevokeCustomerReport(report types.CustomerReport, conn *pgxpool.Conn) error {

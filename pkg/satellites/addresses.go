@@ -43,15 +43,19 @@ func GetWorkerAddresses(uuid string, conn *pgxpool.Conn) ([]types.AddressRecord,
 }
 
 func GetAddressById(addressId int32, conn *pgxpool.Conn) (*types.AddressRecord, error) {
-	var row *types.AddressRecord
-	if err := conn.QueryRow(
+	row, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM addresses WHERE id = $1;",
 		addressId,
-	).Scan(&row); err != nil {
+	)
+	if err != nil {
 		return nil, err
 	}
-	return row, nil
+	address, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.AddressRecord])
+	if err != nil {
+		return nil, err
+	}
+	return address, nil
 }
 
 func AddAddress(address types.AddressRecord, conn *pgxpool.Conn) (*int32, error) {

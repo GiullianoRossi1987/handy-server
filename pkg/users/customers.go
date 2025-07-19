@@ -11,24 +11,48 @@ import (
 )
 
 func GetCustomerById(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id = $1", id).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE id = $1",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
 }
 
 func GetCustomerByUUID(uuid string, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE uuid = $1", uuid).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE uuid = $1",
+		uuid,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
 }
 
 func GetCustomerByUserId(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id_user = $1", id).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE id_user = $1",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
