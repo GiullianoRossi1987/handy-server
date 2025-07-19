@@ -25,17 +25,18 @@ func GetEmailById(pool *pgxpool.Pool, emailId int32) (*serial.Email, error) {
 	return serial.SerializeEmail(record), nil
 }
 
-func AddEmail(pool *pgxpool.Pool, rq requests.EmailBody) error {
+func AddEmail(pool *pgxpool.Pool, rq requests.EmailBody) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	record := rq.ToRecord()
-	if err := satellites.AddEmail(*record, conn); err != nil {
-		return err
+	id, err := satellites.AddEmail(*record, conn)
+	if err != nil {
+		return nil, err
 	}
 	conn.Release()
-	return nil
+	return id, nil
 }
 
 func GetWorkerEmails(pool *pgxpool.Pool, uuid string) ([]serial.Email, error) {

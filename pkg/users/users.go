@@ -9,35 +9,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func AddUser(record types.UsersRecord, conn *pgxpool.Conn) error {
+func AddUser(record types.UsersRecord, conn *pgxpool.Conn) (*int32, error) {
+	var id int32
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	if err := conn.QueryRow(
 		context.Background(),
-		"INSERT INTO users (login, password) VALUES ($1, $2)",
+		"INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id;",
 		record.Login,
 		record.Password,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "users",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func GetUserByLogin(login string, connection *pgxpool.Conn) (*types.UsersRecord, error) {

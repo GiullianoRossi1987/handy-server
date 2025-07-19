@@ -43,17 +43,18 @@ func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResp
 	return responses.SerializeCustomerResponse(data), nil
 }
 
-func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*responses.CustomerResponseBody, error) {
+func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	record := req.ToCustomerRecord()
-	if err := usr.AddCustomer(*record, conn); err != nil {
+	id, err := usr.AddCustomer(*record, conn)
+	if err != nil {
 		return nil, err
 	}
 	conn.Release()
-	return GetCustomerByUUID(pool, record.UUID)
+	return id, nil
 }
 
 func UpdateCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest, uuid string) (*responses.CustomerResponseBody, error) {
@@ -76,4 +77,28 @@ func UpdateCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest, uuid str
 	}
 	conn.Release()
 	return GetCustomerByUUID(pool, uuid)
+}
+
+func DeactivateCustomer(pool *pgxpool.Pool, uuid string) error {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return err
+	}
+	if err := usr.DeactivateCustomer(uuid, conn); err != nil {
+		return err
+	}
+	conn.Release()
+	return nil
+}
+
+func DeleteCustomer(pool *pgxpool.Pool, uuid string) error {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return err
+	}
+	if err := usr.DeleteCustomer(uuid, conn); err != nil {
+		return err
+	}
+	conn.Release()
+	return nil
 }

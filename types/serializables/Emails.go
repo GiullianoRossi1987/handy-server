@@ -18,6 +18,9 @@ type Email struct {
 
 func (email *Email) ToJSON() (string, error) {
 	val, err := json.Marshal(email)
+	if err != nil {
+		return "nil", err
+	}
 	return string(val), err
 }
 

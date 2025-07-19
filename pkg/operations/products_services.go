@@ -3,7 +3,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"time"
 
 	types "types/database/operations"
 	errors "types/errors"
@@ -32,41 +31,31 @@ func GetWorkerProdSer(workerId int32, conn *pgxpool.Conn) ([]types.ProductServic
 	return results, nil
 }
 
-func AddProdSer(prodser types.ProductService, conn *pgxpool.Conn) error {
+func AddProdSer(prodser types.ProductService, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
 		`INSERT INTO products_services (id_worker, name, description, available, quantity_available, service) 
-		 VALUES ($1, $2, $3, $4, $5, $6);`,
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
 		prodser.IdWorker,
 		prodser.Name,
 		prodser.Description,
 		prodser.Available,
 		prodser.QuantityAvailable,
 		prodser.Service,
-	)
-	if err != nil {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return err
-	}
-	if commandTag.RowsAffected() != 1 {
-		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "products_services",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d:%s", prodser.IdWorker, time.Now().String()),
-		}
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func DeleteProdSer(prodserId int32, conn *pgxpool.Conn) error {

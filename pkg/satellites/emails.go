@@ -51,34 +51,25 @@ func GetWorkerEmails(uuid string, conn *pgxpool.Conn) ([]types.EmailRecord, erro
 	return emails, nil
 }
 
-func AddEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
+func AddEmail(email types.EmailRecord, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(context.Background(),
-		`INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3);`,
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		`INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3) RETURNING id;`,
 		email.IdWorker, email.IdCustomer, email.Email,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "emails",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", email.Id),
-		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func DeleteEmail(emailId int32, conn *pgxpool.Conn) error {
@@ -111,7 +102,6 @@ func DeleteEmail(emailId int32, conn *pgxpool.Conn) error {
 	return err
 }
 
-// TODO implement RETURNING SQL statements in insert queries
 func UpdateEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

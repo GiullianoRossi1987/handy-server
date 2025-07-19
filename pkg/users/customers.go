@@ -34,17 +34,39 @@ func GetCustomerByUserId(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, e
 	return customer, nil
 }
 
-func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) error {
+func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) (*int32, error) {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		"INSERT INTO customers (id_user, uuid, fullname) ($1, $2, $3) RETURNING id;",
+		customer.UserId,
+		customer.UUID,
+		customer.Fullname,
+	).Scan(&id); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	return &id, nil
+}
+
+func DeactivateCustomer(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"INSERT INTO customers (id_user, uuid, fullname) ($1, $2, $3);",
-		customer.UserId,
-		customer.UUID,
-		customer.Fullname,
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		WHERE uuid = $1::text;`,
+		uuid,
 	)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -53,11 +75,11 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) error {
 	if commandTag.RowsAffected() != 1 {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "customers",
+			Operation:            "deactivate",
+			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", customer.Id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -67,12 +89,16 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) error {
 	return nil
 }
 
-func DeleteCustomer(id int32, conn *pgxpool.Conn) error {
+func DeleteCustomer(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return nil
+		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), "DELETE FROM customers WHERE id = $1;", id)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM workers WHERE uuid = $1::string;`,
+		uuid,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
@@ -81,10 +107,10 @@ func DeleteCustomer(id int32, conn *pgxpool.Conn) error {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
 			Operation:            "delete",
-			Table:                "customers",
+			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

@@ -40,14 +40,40 @@ func GetWorkerByUserId(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, erro
 	return worker, nil
 }
 
-func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) error {
+func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) (*int32, error) {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		`INSERT INTO workers (id_user, uuid, fullname) VALUES ($1, $2, $3) RETURNING id;`,
+		record.UserId, record.UUID, record.Fullname,
+	).Scan(&id); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	return &id, nil
+}
+
+// TODO implement delete function using UUID instead of ID
+// AND CHANGE THIS FUNCTION TO DEACTIVATE THE WORKER AND THE USER
+func DeactivateWorker(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(),
-		"INSERT INTO workers (id_user, uuid, fullname) VALUES ($1, $2, $3);",
-		record.UserId, record.UUID, record.Fullname)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		WHERE uuid = $1::text;`,
+		uuid,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
@@ -55,11 +81,11 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) error {
 	if commandTag.RowsAffected() != 1 {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
+			Operation:            "deactivate",
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", record.Id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -69,18 +95,15 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) error {
 	return nil
 }
 
-// TODO implement delete function using UUID instead of ID
-// AND CHANGE THIS FUNCTION TO DEACTIVATE THE WORKER AND THE USER
-func DeactivateWorker(id int32, conn *pgxpool.Conn) error {
+func DeleteWorker(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
-		WHERE id = $1;`,
-		id,
+		`DELETE FROM workers WHERE uuid = $1::string;`,
+		uuid,
 	)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -93,7 +116,7 @@ func DeactivateWorker(id int32, conn *pgxpool.Conn) error {
 			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

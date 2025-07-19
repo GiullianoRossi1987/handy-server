@@ -54,12 +54,13 @@ func GetProductServiceOrders(productSericeId int, conn *pgxpool.Conn) ([]types.O
 	return orders, nil
 }
 
-func AddOrder(order types.Order, conn *pgxpool.Conn) error {
+func AddOrder(order types.Order, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
 		`INSERT INTO orders (
       id_product_service, 
@@ -76,7 +77,7 @@ func AddOrder(order types.Order, conn *pgxpool.Conn) error {
       customer_rating, 
       customer_feedback
       )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id;`,
 		order.IdProductService,
 		order.IdCustomer,
 		order.RequestedAt,
@@ -91,31 +92,16 @@ func AddOrder(order types.Order, conn *pgxpool.Conn) error {
 		order.TotalPrice,
 		order.CustomerRating,
 		order.CustomerFeedback,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "orders",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier: fmt.Sprintf(
-				"%d;%d;%s",
-				order.IdProductService,
-				order.IdCustomer,
-				order.RequestedAt.String(),
-			),
-		}
+		return nil, err
 	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
-	}
+
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func DeployOrder(order_id int32, conn *pgxpool.Conn) error {

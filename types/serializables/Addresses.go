@@ -23,6 +23,9 @@ type Address struct {
 
 func (addr *Address) ToJSON() (string, error) {
 	val, err := json.Marshal(addr)
+	if err != nil {
+		return "nil", err
+	}
 	return string(val), err
 }
 

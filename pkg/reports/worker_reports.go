@@ -22,35 +22,27 @@ func GetWorkerReportsById(workerId int32, conn *pgxpool.Conn) ([]types.WorkerRep
 	return reports, nil
 }
 
-func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
+func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
-		"INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3);",
+		`INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3);`,
 		report.Id_Worker,
 		report.Tags,
 		report.Description,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "reports_worker",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", report.Id),
-		}
-	}
-	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
-		return err
+		tx.Rollback(context.Background())
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func DeleteWorkerReportById(reportId int32, conn *pgxpool.Conn) error {

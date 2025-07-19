@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TODO Implement proper satellite exclusion for user exclusion
+// [ ] Satellite exclusion with customers/workers/users should occour at controller level
 func GetWorkerByUUID(pool *pgxpool.Pool, uuid string) (*responses.WorkerResponseBody, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
@@ -26,17 +26,30 @@ func GetWorkerByUUID(pool *pgxpool.Pool, uuid string) (*responses.WorkerResponse
 	return responses.SerializeWorkerResponse(data), nil
 }
 
-func AddWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*responses.WorkerResponseBody, error) {
+func AddWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	record := req.ToWorkerRecord()
-	if err := usr.AddWorker(*record, conn); err != nil {
+	id, err := usr.AddWorker(*record, conn)
+	if err != nil {
 		return nil, err
 	}
 	conn.Release()
-	return GetWorkerByUUID(pool, record.UUID)
+	return id, nil
+}
+
+func DeactivateWorker(pool *pgxpool.Pool, uuid string) error {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return err
+	}
+	if err := usr.DeactivateWorker(uuid, conn); err != nil {
+		return err
+	}
+	conn.Release()
+	return nil
 }
 
 func DeleteWorker(pool *pgxpool.Pool, uuid string) error {
@@ -44,8 +57,31 @@ func DeleteWorker(pool *pgxpool.Pool, uuid string) error {
 	if err != nil {
 		return err
 	}
-	// if err := usr.DeleteWorker()
-	// [ ] Implement DeleteWorker by UUID
+	if err := usr.DeleteWorker(uuid, conn); err != nil {
+		return err
+	}
+	conn.Release()
+	return nil
+}
+
+func UpdateWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest, uuid string) error {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return err
+	}
+	data, err := usr.GetWorkerByUUID(uuid, conn)
+	if err != nil {
+		return err
+	}
+	if data == nil {
+		return nil
+	}
+	record := req.ToWorkerRecord()
+	record.Id = data.Id
+	record.UUID = uuid
+	if err := usr.UpdateWorker(*record, conn); err != nil {
+		return err
+	}
 	conn.Release()
 	return nil
 }

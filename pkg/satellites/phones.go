@@ -51,38 +51,28 @@ func GetCustomerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, er
 	return phones, nil
 }
 
-func AddPhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
+func AddPhone(phone types.PhoneRecord, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
-		"INSERT INTO phones (id_worker, id_customer, phone_number, area_code) VALUES ($1, $2, $3, $4);",
+		`INSERT INTO phones (id_worker, id_customer, phone_number, area_code) VALUES ($1, $2, $3, $4) RETURNING id;`,
 		phone.IdWorker,
 		phone.IdCustomer,
 		phone.PhoneNumber,
 		phone.AreaCode,
-	)
-	if err != nil {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return err
-	}
-	if commandTag.RowsAffected() != 1 {
-		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "phones",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", phone.Id),
-		}
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
 func DeletePhone(phoneId int32, conn *pgxpool.Conn) error {
@@ -124,7 +114,7 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP()  WHERE id = $1;",
+		`UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP()  WHERE id = $1;`,
 		phone.IdWorker,
 		phone.IdCustomer,
 		phone.PhoneNumber,
@@ -152,6 +142,7 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	return nil
 }
 
+// TODO add better SQL paramethers typing
 func DeletePhonesFromCustomer(customerId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

@@ -48,21 +48,18 @@ func Login(pool *pgxpool.Pool, rq requests.LoginRequestBody) (*responses.LoginRe
 	return &response, nil
 }
 
-func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*responses.UserResponseBody, error) {
+func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	record := req.ToRecord()
-	if err := usr.AddUser(*record, conn); err != nil {
-		return nil, err
-	}
-	data, err := usr.GetUserByLogin(record.Login, conn)
+	id, err := usr.AddUser(*record, conn)
 	if err != nil {
 		return nil, err
 	}
 	conn.Release()
-	return responses.SerializeUserResponse(data), nil
+	return id, nil
 }
 
 func UpdateUser(pool *pgxpool.Pool, req requests.CreateUserRequest, id int) (*responses.UserResponseBody, error) {
