@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	rec "types/database/satellites"
 	errors "types/errors"
 	"utils"
 )
@@ -33,4 +34,21 @@ func (b *AddressBody) Validate(operation *string) error {
 		}
 	}
 	return nil
+}
+
+func (b *AddressBody) ToRecord() *rec.AddressRecord {
+	if b == nil {
+		return nil
+	}
+	return &rec.AddressRecord{
+		IdWorker:      b.IdWorker,
+		IdCustomer:    b.IdCustomer,
+		Address:       b.Address,
+		AddressNumber: b.AddressNumber,
+		City:          b.City,
+		UF:            b.UF,
+		Country:       b.Country,
+		Main:          b.Main,
+		Active:        b.Active,
+	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetOrderById(orderId int, conn *pgxpool.Pool) (*types.Order, error) {
+func GetOrderById(orderId int32, conn *pgxpool.Conn) (*types.Order, error) {
 	var order *types.Order
 	if err := conn.QueryRow(
 		context.Background(),
@@ -22,7 +22,8 @@ func GetOrderById(orderId int, conn *pgxpool.Pool) (*types.Order, error) {
 	return order, nil
 }
 
-func GetCustomerOrders(customerId int, conn *pgxpool.Pool) ([]types.Order, error) {
+// [ ] Probably change it to use uuid, but dont knoww.....
+func GetCustomerOrders(customerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_customer = $1;",
@@ -38,7 +39,23 @@ func GetCustomerOrders(customerId int, conn *pgxpool.Pool) ([]types.Order, error
 	return orders, nil
 }
 
-func GetProductServiceOrders(productSericeId int, conn *pgxpool.Pool) ([]types.Order, error) {
+func GetWorkerOrders(workerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM orders WHERE id_worker = $1;",
+		workerId,
+	)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.Order])
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func GetProductServiceOrders(productSericeId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_product_service = $1;",
@@ -54,12 +71,13 @@ func GetProductServiceOrders(productSericeId int, conn *pgxpool.Pool) ([]types.O
 	return orders, nil
 }
 
-func AddOrder(order types.Order, conn *pgxpool.Pool) error {
+func AddOrder(order types.Order, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
 		`INSERT INTO orders (
       id_product_service, 
@@ -76,7 +94,7 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
       customer_rating, 
       customer_feedback
       )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id;`,
 		order.IdProductService,
 		order.IdCustomer,
 		order.RequestedAt,
@@ -91,34 +109,19 @@ func AddOrder(order types.Order, conn *pgxpool.Pool) error {
 		order.TotalPrice,
 		order.CustomerRating,
 		order.CustomerFeedback,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "orders",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier: fmt.Sprintf(
-				"%d;%d;%s",
-				order.IdProductService,
-				order.IdCustomer,
-				order.RequestedAt.String(),
-			),
-		}
+		return nil, err
 	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
-	}
+
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
+func DeployOrder(order_id int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -152,7 +155,7 @@ func DeployOrder(order_id int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
+func UpdateOrder(order types.Order, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -198,12 +201,16 @@ func UpdateOrder(order types.Order, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteOrder(orderId int32, conn *pgxpool.Pool) error {
+func DeleteOrder(orderId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), `DELETE FROM orders WHERE id = $1;`, orderId)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM orders WHERE id = $1 AND deployed_at = NULL;`,
+		orderId,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err

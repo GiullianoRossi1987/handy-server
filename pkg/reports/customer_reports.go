@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerReportsById(workerId int32, conn *pgxpool.Pool) ([]types.CustomerReport, error) {
+func GetCustomerReportsById(workerId int32, conn *pgxpool.Conn) ([]types.CustomerReport, error) {
 	rows, err := conn.Query(context.Background(), "SELECT * FROM reports_customer WHERE id_reported_worker = $1", workerId)
 	if err != nil {
 		return nil, err
@@ -22,32 +22,28 @@ func GetCustomerReportsById(workerId int32, conn *pgxpool.Pool) ([]types.Custome
 	return reports, nil
 }
 
-func AddCustomerReport(report types.CustomerReport, conn *pgxpool.Pool) error {
+func AddCustomerReport(report types.CustomerReport, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(context.Background(),
-		"INSERT INTO reports_customer (id_reported, tags, description) VALUES ($1, $2, $3);",
-		report.Id_Customer, report.Tags, report.Description)
-	if commandTag.RowsAffected() != 1 {
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		`INSERT INTO reports_customer (id_reported, tags, description) VALUES ($1, $2, $3) RETURNING id;`,
+		report.Id_Customer, report.Tags, report.Description,
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "reports_customer",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", report.Id),
-		}
+		return nil, err
 	}
-	if err != nil {
+	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func DeleteCustomerReportById(reportId int32, conn *pgxpool.Pool) error {
+func DeleteCustomerReportById(reportId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -75,7 +71,7 @@ func DeleteCustomerReportById(reportId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func GetCustomerReportById(reportId int32, conn *pgxpool.Pool) (*types.CustomerReport, error) {
+func GetCustomerReportById(reportId int32, conn *pgxpool.Conn) (*types.CustomerReport, error) {
 	var row *types.CustomerReport
 	if err := conn.QueryRow(
 		context.Background(),
@@ -87,7 +83,7 @@ func GetCustomerReportById(reportId int32, conn *pgxpool.Pool) (*types.CustomerR
 	return row, nil
 }
 
-func RevokeCustomerReport(report types.CustomerReport, conn *pgxpool.Pool) error {
+func RevokeCustomerReport(report types.CustomerReport, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err

@@ -10,8 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerAddresses(customerId int32, conn *pgxpool.Pool) ([]types.AddressRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM addresses WHERE id_customer = $1;", customerId)
+func GetCustomerAddresses(uuid string, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT a.* FROM addresses AS a INNER JOIN customers AS c ON c.id = a.customer_id WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -22,8 +26,12 @@ func GetCustomerAddresses(customerId int32, conn *pgxpool.Pool) ([]types.Address
 	return addresses, nil
 }
 
-func GetWorkerAddresses(workerId int32, conn *pgxpool.Pool) ([]types.AddressRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM addresses WHERE id_worker = $1;", workerId)
+func GetWorkerAddresses(uuid string, conn *pgxpool.Conn) ([]types.AddressRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT a.* FROM addresses AS a INNER JOIN workers AS w ON w.id = a.customer_id WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +42,7 @@ func GetWorkerAddresses(workerId int32, conn *pgxpool.Pool) ([]types.AddressReco
 	return addresses, nil
 }
 
-func GetAddressById(addressId int32, conn *pgxpool.Pool) (*types.AddressRecord, error) {
+func GetAddressById(addressId int32, conn *pgxpool.Conn) (*types.AddressRecord, error) {
 	var row *types.AddressRecord
 	if err := conn.QueryRow(
 		context.Background(),
@@ -46,12 +54,13 @@ func GetAddressById(addressId int32, conn *pgxpool.Pool) (*types.AddressRecord, 
 	return row, nil
 }
 
-func AddAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
+func AddAddress(address types.AddressRecord, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
 		`INSERT INTO addresses (
 			id_worker, 
@@ -62,7 +71,7 @@ func AddAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 			main,
 			uf, 
 			country) 
-		VALUES ($1,$2,$3,$4,$5,$6, $7);`,
+		VALUES ($1,$2,$3,$4,$5,$6, $7) RETURNING id;`,
 		address.IdWorker,
 		address.IdCustomer,
 		address.Address,
@@ -71,29 +80,18 @@ func AddAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 		address.Main,
 		address.UF,
 		address.Country,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "Insert",
-			Table:                "addresses",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", address.Id),
-		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func DeleteAddress(addressId int32, conn *pgxpool.Pool) error {
+func DeleteAddress(addressId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -122,7 +120,7 @@ func DeleteAddress(addressId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
+func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -164,6 +162,68 @@ func UpdatedAddress(address types.AddressRecord, conn *pgxpool.Pool) error {
 		return err
 	}
 
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteAddrsFromCustomer(customerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM addresses WHERE customer_id = $1`,
+		customerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "addresses",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", customerId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteAddrsFromWorker(workerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM addresses WHERE worker_id = $1`,
+		workerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "addresses",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", workerId),
+		}
+	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
 		return err

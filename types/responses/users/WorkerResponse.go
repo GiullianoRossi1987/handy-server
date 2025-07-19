@@ -16,8 +16,11 @@ type WorkerResponseBody struct {
 	UpdatedAt time.Time `json:"updated_at" binding:"required"`
 }
 
-func SerializeWorkerResponse(record db.WorkersRecord) WorkerResponseBody {
-	return WorkerResponseBody{
+func SerializeWorkerResponse(record *db.WorkersRecord) *WorkerResponseBody {
+	if record == nil {
+		return nil
+	}
+	return &WorkerResponseBody{
 		Id:        record.Id,
 		UserId:    record.UserId,
 		Uuid:      record.UUID,

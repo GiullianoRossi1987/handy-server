@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetPhoneById(phoneId int32, conn *pgxpool.Pool) (*types.PhoneRecord, error) {
+func GetPhoneById(phoneId int32, conn *pgxpool.Conn) (*types.PhoneRecord, error) {
 	var phone *types.PhoneRecord
 	err := conn.QueryRow(context.Background(), "SELECT * FROM phones WHERE id = $1;", phoneId).Scan(&phone)
 	if err != nil {
@@ -19,8 +19,12 @@ func GetPhoneById(phoneId int32, conn *pgxpool.Pool) (*types.PhoneRecord, error)
 	return phone, nil
 }
 
-func GetWorkerPhones(workerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, error) {
-	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_worker = $1;", workerId)
+func GetWorkerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM phones AS p INNER JOIN workers AS w ON w.id = p.id_worker WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +35,12 @@ func GetWorkerPhones(workerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, e
 	return phones, nil
 }
 
-func GetCustomerPhones(customerId int32, conn *pgxpool.Pool) ([]types.PhoneRecord, error) {
-	row, err := conn.Query(context.Background(), "SELECT * FROM phones WHERE id_customer = $1;", customerId)
+func GetCustomerPhones(uuid string, conn *pgxpool.Conn) ([]types.PhoneRecord, error) {
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM phones AS p INNER JOIN customers AS c ON c.id = p.id_worker WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -43,41 +51,31 @@ func GetCustomerPhones(customerId int32, conn *pgxpool.Pool) ([]types.PhoneRecor
 	return phones, nil
 }
 
-func AddPhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
+func AddPhone(phone types.PhoneRecord, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	var id int32
+	if err := conn.QueryRow(
 		context.Background(),
-		"INSERT INTO phones (id_worker, id_customer, phone_number, area_code) VALUES ($1, $2, $3, $4);",
+		`INSERT INTO phones (id_worker, id_customer, phone_number, area_code) VALUES ($1, $2, $3, $4) RETURNING id;`,
 		phone.IdWorker,
 		phone.IdCustomer,
 		phone.PhoneNumber,
 		phone.AreaCode,
-	)
-	if err != nil {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return err
-	}
-	if commandTag.RowsAffected() != 1 {
-		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "phones",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", phone.Id),
-		}
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func DeletePhone(phoneId int32, conn *pgxpool.Pool) error {
+func DeletePhone(phoneId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -108,14 +106,15 @@ func DeletePhone(phoneId int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
+// TODO change common string queries to raw string queries
+func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP()  WHERE id = $1;",
+		`UPDATE phones SET id_worker = $1, id_customer = $2, phone_number = $3, area_code = $4, updated_at = CURRENT_TIMESTAMP()  WHERE id = $1;`,
 		phone.IdWorker,
 		phone.IdCustomer,
 		phone.PhoneNumber,
@@ -134,6 +133,69 @@ func UpdatePhone(phone types.PhoneRecord, conn *pgxpool.Pool) error {
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
 			Identifier:           fmt.Sprintf("%d", phone.Id),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+// TODO add better SQL paramethers typing
+func DeletePhonesFromCustomer(customerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM phones WHERE customer_id = $1`,
+		customerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "phones",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", customerId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeletePhonesFromWorker(workerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM phones WHERE worker_id = $1`,
+		workerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "phones",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", workerId),
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {

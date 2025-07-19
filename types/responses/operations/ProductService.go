@@ -19,8 +19,11 @@ type ProductServiceResponse struct {
 	UpdatedAt         *time.Time `json:"updated_at"`
 }
 
-func SerializeProductService(record db.ProductService) ProductServiceResponse {
-	return ProductServiceResponse{
+func SerializeProductService(record *db.ProductService) *ProductServiceResponse {
+	if record == nil {
+		return nil
+	}
+	return &ProductServiceResponse{
 		Id:                record.Id,
 		IdWorker:          record.IdWorker,
 		Name:              record.Name,

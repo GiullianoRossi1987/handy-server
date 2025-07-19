@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCustomerById(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+func GetCustomerById(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id = $1", id).Scan(customer); err != nil {
 		return nil, err
@@ -18,7 +18,15 @@ func GetCustomerById(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error
 	return customer, nil
 }
 
-func GetCustomerByUserId(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, error) {
+func GetCustomerByUUID(uuid string, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
+	var customer *types.CustomerRecord
+	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE uuid = $1", uuid).Scan(customer); err != nil {
+		return nil, err
+	}
+	return customer, nil
+}
+
+func GetCustomerByUserId(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
 	var customer *types.CustomerRecord
 	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id_user = $1", id).Scan(customer); err != nil {
 		return nil, err
@@ -26,17 +34,39 @@ func GetCustomerByUserId(id int32, conn *pgxpool.Pool) (*types.CustomerRecord, e
 	return customer, nil
 }
 
-func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
+func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Conn) (*int32, error) {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		"INSERT INTO customers (id_user, uuid, fullname) ($1, $2, $3) RETURNING id;",
+		customer.UserId,
+		customer.UUID,
+		customer.Fullname,
+	).Scan(&id); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	return &id, nil
+}
+
+func DeactivateCustomer(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"INSERT INTO customers (id_user, uuid, fullname) ($1, $2, $3);",
-		customer.UserId,
-		customer.UUID,
-		customer.Fullname,
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		WHERE uuid = $1::text;`,
+		uuid,
 	)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -45,11 +75,11 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
 	if commandTag.RowsAffected() != 1 {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "customers",
+			Operation:            "deactivate",
+			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", customer.Id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -59,12 +89,16 @@ func AddCustomer(customer types.CustomerRecord, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
+func DeleteCustomer(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return nil
+		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), "DELETE FROM customers WHERE id = $1;", id)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM workers WHERE uuid = $1::string;`,
+		uuid,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
@@ -73,10 +107,10 @@ func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
 			Operation:            "delete",
-			Table:                "customers",
+			Table:                "workers",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", id),
+			Identifier:           uuid,
 		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
@@ -86,14 +120,14 @@ func DeleteCustomer(id int32, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) error {
+func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE FROM customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
 		newDataRecord.Fullname,
 		newDataRecord.Active,
 		newDataRecord.Id,
@@ -119,14 +153,14 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) erro
 	return nil
 }
 
-func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool) error {
+func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE FROM customers SET avg_rating = $1 WHERE id = $2;",
+		"UPDATE customers SET avg_rating = $1 WHERE id = $2;",
 		newDataRecord.Avg_ratings,
 		newDataRecord.Id,
 	)
@@ -151,8 +185,16 @@ func UpdateCustomerRating(newDataRecord types.CustomerRecord, conn *pgxpool.Pool
 	return nil
 }
 
-func DoesCustomerExists(customerId int32, conn *pgxpool.Pool) (bool, error) {
+func DoesCustomerExists(customerId int32, conn *pgxpool.Conn) (bool, error) {
 	res, err := GetCustomerById(customerId, conn)
+	if err != nil {
+		return false, err
+	}
+	return res != nil, nil
+}
+
+func DoesCustomerUUIDExists(uuid string, conn *pgxpool.Conn) (bool, error) {
+	res, err := GetCustomerByUUID(uuid, conn)
 	if err != nil {
 		return false, err
 	}

@@ -18,14 +18,20 @@ type Email struct {
 
 func (email *Email) ToJSON() (string, error) {
 	val, err := json.Marshal(email)
+	if err != nil {
+		return "nil", err
+	}
 	return string(val), err
 }
 
-func SerializeEmail(record db.EmailRecord) Email {
-	return Email{
+func SerializeEmail(record *db.EmailRecord) *Email {
+	if record == nil {
+		return nil
+	}
+	return &Email{
 		Id:         record.Id,
-		IdWorker:   &record.IdWorker,
-		IdCustomer: &record.IdCustomer,
+		IdWorker:   record.IdWorker,
+		IdCustomer: record.IdCustomer,
 		Email:      record.Email,
 		Active:     record.Active,
 		CreatedAt:  &record.CreatedAt,

@@ -3,9 +3,9 @@ package types
 import "time"
 
 type AddressRecord struct {
-	Id            int
-	IdWorker      *int
-	IdCustomer    *int
+	Id            int32
+	IdWorker      *int32
+	IdCustomer    *int32
 	Address       string
 	AddressNumber string
 	City          string

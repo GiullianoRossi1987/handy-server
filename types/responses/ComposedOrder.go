@@ -13,11 +13,14 @@ type ComposedOrderResponse struct {
 	UsingOrder response_opr.OrderResponse        `json:"order" binding:"required"`
 }
 
-func SerializeComposedOrderResponse(order_record db.ComposedOrder) ComposedOrderResponse {
-	return ComposedOrderResponse{
-		Customer:   response_usr.SerializeCustomerResponse(order_record.Customer),
-		Worker:     response_usr.SerializeWorkerResponse(order_record.Worker),
-		UsingOrder: response_opr.SerializeOrderRecord(order_record.UsingOrder),
+func SerializeComposedOrderResponse(order_record *db.ComposedOrder) *ComposedOrderResponse {
+	if order_record == nil {
+		return nil
+	}
+	return &ComposedOrderResponse{
+		Customer:   *response_usr.SerializeCustomerResponse(&order_record.Customer),
+		Worker:     *response_usr.SerializeWorkerResponse(&order_record.Worker),
+		UsingOrder: *response_opr.SerializeOrderRecord(&order_record.UsingOrder),
 	}
 }
 

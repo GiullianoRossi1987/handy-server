@@ -9,38 +9,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func AddUser(record types.UsersRecord, conn *pgxpool.Pool) error {
+func AddUser(record types.UsersRecord, conn *pgxpool.Conn) (*int32, error) {
+	var id int32
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(
+	if err := conn.QueryRow(
 		context.Background(),
-		"INSERT INTO users (login, password) VALUES ($1, $2)",
+		"INSERT INTO users (login, password) VALUES ($1, $2) RETURNING id;",
 		record.Login,
 		record.Password,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "users",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func GetUserByLogin(login string, connection *pgxpool.Pool) (*types.UsersRecord, error) {
+func GetUserByLogin(login string, connection *pgxpool.Conn) (*types.UsersRecord, error) {
 	var result *types.UsersRecord
 	if err := connection.QueryRow(
 		context.Background(),
@@ -52,7 +43,7 @@ func GetUserByLogin(login string, connection *pgxpool.Pool) (*types.UsersRecord,
 	return result, nil
 }
 
-func DeleteUserById(id int, conn *pgxpool.Pool) error {
+func DeleteUserById(id int, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -78,7 +69,7 @@ func DeleteUserById(id int, conn *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Pool) error {
+func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Conn) error {
 	tx, err := connection.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -108,4 +99,27 @@ func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Pool) erro
 		return err
 	}
 	return nil
+}
+
+func IsUserLoggable(userId int32, conn *pgxpool.Conn) (bool, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT
+			t1.*,
+			t2.*
+		FROM
+			users as u,
+			workers as w
+		WHERE
+			u.active AND w.active AND $1 in (u.id_user, w.id_user)
+		LIMIT 1;`,
+	)
+	if err != nil {
+		return false, err
+	}
+	items, err := rows.Values()
+	if err != nil {
+		return false, err
+	}
+	return len(items) > 0, nil
 }

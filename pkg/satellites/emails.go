@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetEmailById(emailId int32, conn *pgxpool.Pool) (*types.EmailRecord, error) {
+func GetEmailById(emailId int32, conn *pgxpool.Conn) (*types.EmailRecord, error) {
 	var email *types.EmailRecord
 	err := conn.QueryRow(context.Background(), "SELECT * FROM emails WHERE id = $1;", emailId).Scan(email)
 	if err != nil {
@@ -19,8 +19,12 @@ func GetEmailById(emailId int32, conn *pgxpool.Pool) (*types.EmailRecord, error)
 	return email, nil
 }
 
-func GetCustomerEmails(customerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_customer = $1;", customerId)
+func GetCustomerEmails(uuid string, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT e.* FROM emails AS e INNER JOIN customers AS c ON c.id = e.id_worker WHERE c.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +35,12 @@ func GetCustomerEmails(customerId int32, conn *pgxpool.Pool) ([]types.EmailRecor
 	return emails, nil
 }
 
-func GetWorkerEmails(workerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, error) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM emails WHERE id_worker = $1;", workerId)
+func GetWorkerEmails(uuid string, conn *pgxpool.Conn) ([]types.EmailRecord, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		`SELECT e.* FROM emails AS e INNER JOIN workers AS w ON w.id = e.id_worker WHERE w.uuid = $1;`,
+		uuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -43,37 +51,28 @@ func GetWorkerEmails(workerId int32, conn *pgxpool.Pool) ([]types.EmailRecord, e
 	return emails, nil
 }
 
-func AddEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+func AddEmail(email types.EmailRecord, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	commandTag, err := conn.Exec(context.Background(),
-		"INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3);",
+	var id int32
+	if err := conn.QueryRow(
+		context.Background(),
+		`INSERT INTO emails (id_worker, id_customer, email) VALUES ($1, $2, $3) RETURNING id;`,
 		email.IdWorker, email.IdCustomer, email.Email,
-	)
-	if commandTag.RowsAffected() != 1 {
+	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
-		return &errors.UnexpectedDBChangeBehaviourError{
-			Operation:            "insert",
-			Table:                "emails",
-			ExpectedChangedLines: 1,
-			ChangedLines:         int(commandTag.RowsAffected()),
-			Identifier:           fmt.Sprintf("%d", email.Id),
-		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	return nil
+	return &id, nil
 }
 
-func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
+func DeleteEmail(emailId int32, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -103,7 +102,7 @@ func DeleteEmail(emailId int32, conn *pgxpool.Pool) error {
 	return err
 }
 
-func UpdateEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
+func UpdateEmail(email types.EmailRecord, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -130,6 +129,68 @@ func UpdateEmail(email types.EmailRecord, conn *pgxpool.Pool) error {
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteEmailsFromCustomer(customerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM emails WHERE customer_id = $1`,
+		customerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "emails",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", customerId),
+		}
+	}
+	if err := tx.Commit(context.Background()); err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	return nil
+}
+
+func DeleteEmailsFromWorker(workerId int32, conn *pgxpool.Conn) error {
+	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM emails WHERE worker_id = $1`,
+		workerId,
+	)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	if commandTag.RowsAffected() != 1 {
+		tx.Rollback(context.Background())
+		return &errors.UnexpectedDBChangeBehaviourError{
+			Operation:            "delete customer's",
+			Table:                "phones",
+			ExpectedChangedLines: 1,
+			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", workerId),
+		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+	tp "types/database/satellites"
 	errors "types/errors"
 	utils "utils"
 )
@@ -21,4 +23,19 @@ func (b *EmailBody) Validate(operation *string) error {
 		}
 	}
 	return nil
+}
+
+func (b *EmailBody) ToRecord() *tp.EmailRecord {
+	if b == nil {
+		return nil
+	}
+	return &tp.EmailRecord{
+		Id:         0,
+		IdWorker:   b.IdWorker,
+		IdCustomer: b.IdCustomer,
+		Email:      b.Email,
+		Active:     b.Active,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
 }

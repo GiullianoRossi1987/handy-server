@@ -23,11 +23,17 @@ type Address struct {
 
 func (addr *Address) ToJSON() (string, error) {
 	val, err := json.Marshal(addr)
+	if err != nil {
+		return "nil", err
+	}
 	return string(val), err
 }
 
-func SerializeAddress(record db.AddressRecord) Address {
-	return Address{
+func SerializeAddress(record *db.AddressRecord) *Address {
+	if record == nil {
+		return nil
+	}
+	return &Address{
 		Id:            int32(record.Id),
 		IdWorker:      new(int32),
 		IdCustomer:    new(int32),
