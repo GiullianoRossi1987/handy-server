@@ -39,8 +39,14 @@ func AddProdSer(prodser types.ProductService, conn *pgxpool.Conn) (*int32, error
 	var id int32
 	if err := conn.QueryRow(
 		context.Background(),
-		`INSERT INTO products_services (id_worker, name, description, available, quantity_available, service) 
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
+		`INSERT INTO products_services (
+			id_worker,
+			name, 
+			description, 
+			available, 
+			quantity_available, 
+			service
+		) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;`,
 		prodser.IdWorker,
 		prodser.Name,
 		prodser.Description,
@@ -63,7 +69,11 @@ func DeleteProdSer(prodserId int32, conn *pgxpool.Conn) error {
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), `DELETE FROM products_services WHERE id = $1;`, prodserId)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM products_services WHERE id = $1;`,
+		prodserId,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
@@ -99,7 +109,7 @@ func UpdateProdSer(prodser types.ProductService, conn *pgxpool.Conn) error {
 		 quantity_available = $5,
 		 service = $6,
 		 updated_at = CURRENT_TIMESTAMP(),
-		 WHERE id = $1`,
+		 WHERE id = $1`, // [ ] Probably could change it to a database trigger
 		prodser.Id,
 		prodser.Name,
 		prodser.Description,

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetOrderById(orderId int, conn *pgxpool.Conn) (*types.Order, error) {
+func GetOrderById(orderId int32, conn *pgxpool.Conn) (*types.Order, error) {
 	var order *types.Order
 	if err := conn.QueryRow(
 		context.Background(),
@@ -22,7 +22,8 @@ func GetOrderById(orderId int, conn *pgxpool.Conn) (*types.Order, error) {
 	return order, nil
 }
 
-func GetCustomerOrders(customerId int, conn *pgxpool.Conn) ([]types.Order, error) {
+// [ ] Probably change it to use uuid, but dont knoww.....
+func GetCustomerOrders(customerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_customer = $1;",
@@ -38,7 +39,23 @@ func GetCustomerOrders(customerId int, conn *pgxpool.Conn) ([]types.Order, error
 	return orders, nil
 }
 
-func GetProductServiceOrders(productSericeId int, conn *pgxpool.Conn) ([]types.Order, error) {
+func GetWorkerOrders(workerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM orders WHERE id_worker = $1;",
+		workerId,
+	)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.Order])
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func GetProductServiceOrders(productSericeId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM orders WHERE id_product_service = $1;",
@@ -189,7 +206,11 @@ func DeleteOrder(orderId int32, conn *pgxpool.Conn) error {
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), `DELETE FROM orders WHERE id = $1;`, orderId)
+	commandTag, err := conn.Exec(
+		context.Background(),
+		`DELETE FROM orders WHERE id = $1 AND deployed_at = NULL;`,
+		orderId,
+	)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return err
