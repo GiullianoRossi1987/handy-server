@@ -47,3 +47,18 @@ func GetUserByLogin(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 	return gin.HandlerFunc(fn)
 }
+
+func LoginWithUser(pool *pgxpool.Pool) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		content := requests.LoginRequestBody{}
+		if err := c.ShouldBindBodyWith(&content, binding.JSON); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+		}
+		response, err := services.Login(pool, content)
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+		}
+		c.JSON(http.StatusOK, response)
+	}
+	return gin.HandlerFunc(fn)
+}

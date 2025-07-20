@@ -6,6 +6,7 @@ import (
 	"time"
 	requests "types/requests/users"
 	responses "types/responses/users"
+	"utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -42,7 +43,7 @@ func Login(pool *pgxpool.Pool, rq requests.LoginRequestBody) (*responses.LoginRe
 	conn.Release()
 	response := responses.LoginResponse{
 		Login:          rq.Login,
-		Success:        data.Password == rq.Password,
+		Success:        utils.ValidatePassword(rq.Password, data.Password),
 		AttemptedLogin: time.Now(),
 	}
 	return &response, nil
@@ -54,6 +55,10 @@ func AddUser(pool *pgxpool.Pool, req requests.CreateUserRequest) (*int32, error)
 		return nil, err
 	}
 	record := req.ToRecord()
+	record.Password, err = utils.EncryptPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
 	id, err := usr.AddUser(*record, conn)
 	if err != nil {
 		return nil, err
