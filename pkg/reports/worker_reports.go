@@ -30,7 +30,7 @@ func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) (*int32, err
 	var id int32
 	if err := conn.QueryRow(
 		context.Background(),
-		`INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3);`,
+		`INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3, $4) RETURNING id;`,
 		report.Id_Worker,
 		report.Tags,
 		report.Description,
@@ -88,14 +88,16 @@ func GetWorkerReportById(reportId int32, conn *pgxpool.Conn) (*types.WorkerRepor
 	return &record, nil
 }
 
-func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
+func UpdateWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE reports_workers SET revoked = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;",
+		`UPDATE reports_workers SET tags = $1, rating = $2, revoked = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4;`,
+		report.Tags,
+		report.Rating,
 		report.Revoked,
 		report.Id,
 	)
