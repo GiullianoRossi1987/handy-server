@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   login TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  update_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS workers (
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
 CREATE TABLE IF NOT EXISTS reports_workers (
   id SERIAL UNIQUE,
-  id_reported_worker INT NOT NULL REFERENCES workers(id),
+  id_reported_worker INT NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
   tags TEXT ARRAY NOT NULL,
   rating DECIMAL NOT NULL DEFAULT 0,
   description TEXT NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS reports_workers (
 
 CREATE TABLE IF NOT EXISTS reports_customers (
   id SERIAL UNIQUE,
-  id_reported_customer INT NOT NULL REFERENCES customers(id),
+  id_reported_customer INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   tags TEXT ARRAY NOT NULL,
   rating DECIMAL NOT NULL DEFAULT 0,
   description TEXT NOT NULL,
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS reports_customers (
 
 CREATE TABLE IF NOT EXISTS phones (
   id SERIAL UNIQUE,
-  id_worker INT NULL REFERENCES workers(id),
-  id_customer INT NULL REFERENCES customers(id),
+  id_worker INT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  id_customer INT NULL REFERENCES customers(id) ON DELETE CASCADE,
   phone_number TEXT NOT NULL,
   area_code TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -64,8 +64,8 @@ CREATE TABLE IF NOT EXISTS phones (
 
 CREATE TABLE IF NOT EXISTS emails (
   id SERIAL UNIQUE,
-  id_worker INT NULL REFERENCES workers(id),
-  id_customer INT NULL REFERENCES customers(id),
+  id_worker INT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  id_customer INT NULL REFERENCES customers(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS emails (
 
 CREATE TABLE IF NOT EXISTS addresses (
   id SERIAL UNIQUE,
-  id_worker INT NULL REFERENCES workers(id),
-  id_customer INT NULL REFERENCES customers(id),
+  id_worker INT NULL REFERENCES workers(id) ON DELETE CASCADE,
+  id_customer INT NULL REFERENCES customers(id) ON DELETE CASCADE,
   address TEXT NOT NULL,
   address_number TEXT NOT NULL,
   city TEXT NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS addresses (
 
 CREATE TABLE IF NOT EXISTS product_services (
   id SERIAL UNIQUE,
-  id_worker INT NOT NULL REFERENCES workers(id),
+  id_worker INT NOT NULL REFERENCES workers(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   available BOOLEAN NOT NULL DEFAULT TRUE,
@@ -99,16 +99,17 @@ CREATE TABLE IF NOT EXISTS product_services (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- TODO check if the structures are compliant with this new exclusion model for the orders
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL UNIQUE,
-  id_product_service INT NOT NULL REFERENCES product_services(id),
-  id_customer INT NOT NULL REFERENCES customers(id),
+  id_product_service INT REFERENCES product_services(id) ON DELETE SET NULL,
+  id_customer INT REFERENCES customers(id) ON DELETE CASCADE ON DELETE SET NULL,
   requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   scheduled_to TIMESTAMP DEFAULT NULL,
   deployed_at TIMESTAMP DEFAULT NULL,
   description TEXT NOT NULL,
-  id_worker_addr INT DEFAULT NULL REFERENCES addresses(id),
-  id_customer_addr INT DEFAULT NULL REFERENCES addresses(id),
+  id_worker_addr INT DEFAULT NULL REFERENCES addresses(id) ON DELETE SET NULL,
+  id_customer_addr INT DEFAULT NULL REFERENCES addresses(id) ON DELETE SET NULL,
   online BOOLEAN DEFAULT TRUE,
   quantity DECIMAL NOT NULL DEFAULT 1,
   quantity_by_time DECIMAL NOT NULL DEFAULT 1,

@@ -1,9 +1,8 @@
 package main
 
 import (
-	"pkg"
-	// types "types/config"
 	"fmt"
+	"pkg"
 	routes "routes"
 	usr "routes/users"
 	types "types/config"
@@ -23,7 +22,7 @@ func main() {
 	router := gin.Default()
 	routes.SetRouter(router)
 	router.POST("/test", routes.TestResponse)
-	router.POST("/user/add", usr.AddUserHandler(pool))
-	router.GET("/user/get-login/:login", usr.GetUserByLogin(pool))
+
+	usr.RouteUsers(router, pool)
 	router.Run("localhost:8080")
 }
