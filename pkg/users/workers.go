@@ -79,8 +79,6 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) (*int32, error) {
 	return &id, nil
 }
 
-// TODO implement delete function using UUID instead of ID
-// AND CHANGE THIS FUNCTION TO DEACTIVATE THE WORKER AND THE USER
 func DeactivateWorker(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

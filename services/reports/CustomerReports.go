@@ -30,6 +30,19 @@ func GetCustomerReports(pool *pgxpool.Pool, customerId int32) ([]serial.ReportBo
 	return reports, nil
 }
 
+func GetCustomerReportById(pool *pgxpool.Pool, reportId int32) (*serial.ReportBody, error) {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	report, err := reports.GetCustomerReportById(reportId, conn)
+	conn.Release()
+	if err != nil {
+		return nil, err
+	}
+	return serial.SerializeCustomerReport(report), nil
+}
+
 func AddCustomerReport(pool *pgxpool.Pool, req serial.ReportBody) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {

@@ -1,20 +1,16 @@
 package routes
 
 import (
-	services "services/users"
-	// responses "types/responses/users"
 	"net/http"
+	services "services/users"
 	"strconv"
 	requests "types/requests/users"
+	serial "types/serializables"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type IdReturing struct {
-	Id int32
-}
 
 func checkUserExists(pool *pgxpool.Pool, user int) bool {
 	data, err := services.GetUserById(pool, user)
@@ -31,7 +27,7 @@ func AddUserHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 		}
-		c.JSON(http.StatusOK, IdReturing{
+		c.JSON(http.StatusOK, serial.IdReturing{
 			Id: *id,
 		})
 	}
@@ -94,7 +90,6 @@ func UpdateUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
-// TODO ADD DELETE USER CASCADE METHOD
 func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))

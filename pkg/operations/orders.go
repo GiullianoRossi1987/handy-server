@@ -22,7 +22,6 @@ func GetOrderById(orderId int32, conn *pgxpool.Conn) (*types.Order, error) {
 	return order, nil
 }
 
-// [ ] Probably change it to use uuid, but dont knoww.....
 func GetCustomerOrders(customerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
