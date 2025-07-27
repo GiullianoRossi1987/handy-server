@@ -22,7 +22,6 @@ func GetOrderById(orderId int32, conn *pgxpool.Conn) (*types.Order, error) {
 	return order, nil
 }
 
-// [ ] Probably change it to use uuid, but dont knoww.....
 func GetCustomerOrders(customerId int32, conn *pgxpool.Conn) ([]types.Order, error) {
 	rows, err := conn.Query(
 		context.Background(),
@@ -129,8 +128,8 @@ func DeployOrder(order_id int32, conn *pgxpool.Conn) error {
 	commandTag, err := conn.Exec(
 		context.Background(),
 		`UPDATE orders SET 
-		deployed_at = CURRENT_TIMESTAMP(), 
-		updated_at = CURRENT_TIMESTAMP() 
+		deployed_at = CURRENT_TIMESTAMP, 
+		updated_at = CURRENT_TIMESTAMP 
 		WHERE id = $1;`,
 		order_id,
 	)
@@ -170,7 +169,7 @@ func UpdateOrder(order types.Order, conn *pgxpool.Conn) error {
     quantity = $6,
     quantity_by_time = $7,
     total_price = $8
-    updated_at = CURRENT_TIMESTAMP() WHERE id = $1;`,
+    updated_at = CURRENT_TIMESTAMP WHERE id = $1;`,
 		order.Id,
 		order.Description,
 		order.ScheduleTo,

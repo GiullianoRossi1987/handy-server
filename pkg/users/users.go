@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	types "types/database/users"
 	errors "types/errors"
 
@@ -32,12 +33,32 @@ func AddUser(record types.UsersRecord, conn *pgxpool.Conn) (*int32, error) {
 }
 
 func GetUserByLogin(login string, connection *pgxpool.Conn) (*types.UsersRecord, error) {
-	var result *types.UsersRecord
-	if err := connection.QueryRow(
+	rows, err := connection.Query(
 		context.Background(),
-		"SELECT * FROM users WHERE login = $1",
+		`SELECT * FROM users WHERE login = $1`,
 		login,
-	).Scan(&result); err != nil {
+	)
+	if err != nil {
+		return nil, err
+	}
+	result, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByPos[types.UsersRecord])
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func GetUserById(id int, connection *pgxpool.Conn) (*types.UsersRecord, error) {
+	rows, err := connection.Query(
+		context.Background(),
+		`SELECT * FROM users WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	result, err := pgx.CollectOneRow(rows, pgx.RowToAddrOfStructByPos[types.UsersRecord])
+	if err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -76,7 +97,7 @@ func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Conn) erro
 	}
 	commandTag, err := connection.Exec(
 		context.Background(),
-		"UPDATE user SET login = $1, password = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3",
+		"UPDATE users SET login = $1, password = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3;",
 		newDataRow.Login,
 		newDataRow.Password,
 		newDataRow.Id,
@@ -88,6 +109,7 @@ func UpdateUserById(newDataRow types.UsersRecord, connection *pgxpool.Conn) erro
 			Table:                "users",
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
+			Identifier:           fmt.Sprintf("%d", newDataRow.Id),
 		}
 	}
 	if err != nil {
@@ -105,13 +127,13 @@ func IsUserLoggable(userId int32, conn *pgxpool.Conn) (bool, error) {
 	rows, err := conn.Query(
 		context.Background(),
 		`SELECT
-			t1.*,
-			t2.*
+			u.*,
+			w.*
 		FROM
 			users as u,
 			workers as w
 		WHERE
-			u.active AND w.active AND $1 in (u.id_user, w.id_user)
+			u.active == TRUE AND w.active AND $1 in (u.id_user, w.id_user)
 		LIMIT 1;`,
 	)
 	if err != nil {

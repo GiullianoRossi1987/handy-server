@@ -3,9 +3,10 @@ package types
 import "time"
 
 type WorkerReport struct {
-	Id          int
-	Id_Worker   int
+	Id          int32
+	Id_Worker   int32
 	Tags        []string
+	Rating      float32
 	Description string
 	Revoked     bool
 	CreatedAt   time.Time

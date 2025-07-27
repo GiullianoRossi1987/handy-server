@@ -43,12 +43,13 @@ func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResp
 	return responses.SerializeCustomerResponse(data), nil
 }
 
-func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*int32, error) {
+func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest, usr_id int32) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	record := req.ToCustomerRecord()
+	record.UserId = int(usr_id)
 	id, err := usr.AddCustomer(*record, conn)
 	if err != nil {
 		return nil, err

@@ -11,24 +11,48 @@ import (
 )
 
 func GetCustomerById(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id = $1", id).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE id = $1",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
 }
 
 func GetCustomerByUUID(uuid string, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE uuid = $1", uuid).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE uuid = $1",
+		uuid,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
 }
 
 func GetCustomerByUserId(id int32, conn *pgxpool.Conn) (*types.CustomerRecord, error) {
-	var customer *types.CustomerRecord
-	if err := conn.QueryRow(context.Background(), "SELECT * FROM customers WHERE id_user = $1", id).Scan(customer); err != nil {
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM customers WHERE id_user = $1",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	customer, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.CustomerRecord])
+	if err != nil {
 		return nil, err
 	}
 	return customer, nil
@@ -64,7 +88,7 @@ func DeactivateCustomer(uuid string, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP
 		WHERE uuid = $1::text;`,
 		uuid,
 	)
@@ -127,7 +151,7 @@ func UpdateCustomer(newDataRecord types.CustomerRecord, conn *pgxpool.Conn) erro
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE customers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3;",
 		newDataRecord.Fullname,
 		newDataRecord.Active,
 		newDataRecord.Id,

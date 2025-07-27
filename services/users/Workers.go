@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// [ ] Satellite exclusion with customers/workers/users should occour at controller level
 func GetWorkerByUUID(pool *pgxpool.Pool, uuid string) (*responses.WorkerResponseBody, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
@@ -26,12 +25,13 @@ func GetWorkerByUUID(pool *pgxpool.Pool, uuid string) (*responses.WorkerResponse
 	return responses.SerializeWorkerResponse(data), nil
 }
 
-func AddWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest) (*int32, error) {
+func AddWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest, usrid int32) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	record := req.ToWorkerRecord()
+	record.UserId = int(usrid)
 	id, err := usr.AddWorker(*record, conn)
 	if err != nil {
 		return nil, err

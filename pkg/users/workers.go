@@ -11,9 +11,15 @@ import (
 )
 
 func GetWorkerById(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE id = $1;", id).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM workers WHERE id = $1;",
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}
@@ -21,9 +27,15 @@ func GetWorkerById(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
 }
 
 func GetWorkerByUUID(uuid string, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE uuid = $1;", uuid).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM workers WHERE uuid = $1;`,
+		uuid,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +43,15 @@ func GetWorkerByUUID(uuid string, conn *pgxpool.Conn) (*types.WorkersRecord, err
 }
 
 func GetWorkerByUserId(id int32, conn *pgxpool.Conn) (*types.WorkersRecord, error) {
-	var worker *types.WorkersRecord
-	err := conn.QueryRow(context.Background(),
-		"SELECT * FROM workers WHERE id_user = $1;", id).Scan(&worker)
+	row, err := conn.Query(
+		context.Background(),
+		`SELECT * FROM workers WHERE id_user = $1;`,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	worker, err := pgx.CollectOneRow(row, pgx.RowToAddrOfStructByPos[types.WorkersRecord])
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +79,6 @@ func AddWorker(record types.WorkersRecord, conn *pgxpool.Conn) (*int32, error) {
 	return &id, nil
 }
 
-// TODO implement delete function using UUID instead of ID
-// AND CHANGE THIS FUNCTION TO DEACTIVATE THE WORKER AND THE USER
 func DeactivateWorker(uuid string, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -70,7 +86,7 @@ func DeactivateWorker(uuid string, conn *pgxpool.Conn) error {
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP()
+		`UPDATE workers SET active = FALSE, name = '', avg_ratings = 0, updated_at = CURRENT_TIMESTAMP
 		WHERE uuid = $1::text;`,
 		uuid,
 	)
@@ -132,7 +148,7 @@ func UpdateWorker(newDataRecord types.WorkersRecord, conn *pgxpool.Conn) error {
 		return err
 	}
 	commandTag, err := conn.Exec(context.Background(),
-		"UPDATE workers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP() WHERE id = $3;",
+		"UPDATE workers SET fullname = $1, active = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3;",
 		newDataRecord.Fullname, newDataRecord.Active, newDataRecord.Id)
 	if err != nil {
 		tx.Rollback(context.Background())

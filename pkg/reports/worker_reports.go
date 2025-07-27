@@ -30,7 +30,7 @@ func AddWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) (*int32, err
 	var id int32
 	if err := conn.QueryRow(
 		context.Background(),
-		`INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3);`,
+		`INSERT INTO reports_workers (id_reported, tags, description) VALUES ($1, $2, $3, $4) RETURNING id;`,
 		report.Id_Worker,
 		report.Tags,
 		report.Description,
@@ -73,25 +73,31 @@ func DeleteWorkerReportById(reportId int32, conn *pgxpool.Conn) error {
 }
 
 func GetWorkerReportById(reportId int32, conn *pgxpool.Conn) (*types.WorkerReport, error) {
-	var row *types.WorkerReport
-	if err := conn.QueryRow(
+	row, err := conn.Query(
 		context.Background(),
 		"SELECT * FROM reports_workers WHERE id = $1;",
 		reportId,
-	).Scan(&row); err != nil {
+	)
+	if err != nil {
 		return nil, err
 	}
-	return row, nil
+	record, err := pgx.CollectOneRow(row, pgx.RowToStructByPos[types.WorkerReport])
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
 }
 
-func RevokeWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
+func UpdateWorkerReport(report types.WorkerReport, conn *pgxpool.Conn) error {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
 	commandTag, err := conn.Exec(
 		context.Background(),
-		"UPDATE reports_workers SET revoked = $1, updated_at = CURRENT_TIMESTAMP() WHERE id = $2;",
+		`UPDATE reports_workers SET tags = $1, rating = $2, revoked = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4;`,
+		report.Tags,
+		report.Rating,
 		report.Revoked,
 		report.Id,
 	)
