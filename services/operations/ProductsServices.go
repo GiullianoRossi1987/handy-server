@@ -44,6 +44,25 @@ func GetWorkerCatalog(pool *pgxpool.Pool, workerId int32) ([]responses.ProductSe
 	return data, nil
 }
 
+func SearchProdSer(pool *pgxpool.Pool, search string) ([]responses.ProductServiceResponse, error) {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	records, err := op.SearchService(search, conn)
+	conn.Release()
+	if err != nil {
+		return nil, err
+	}
+	data := utils.MapCar(
+		records,
+		func(record types.ProductService) responses.ProductServiceResponse {
+			return *responses.SerializeProductService(&record)
+		},
+	)
+	return data, nil
+}
+
 func AddProductService(pool *pgxpool.Pool, req requests.ProductServiceBody) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {

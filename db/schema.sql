@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS product_services (
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL UNIQUE,
   id_product_service INT REFERENCES product_services(id) ON DELETE SET NULL,
-  id_customer INT REFERENCES customers(id) ON DELETE CASCADE ON DELETE SET NULL,
+  id_customer INT REFERENCES customers(id) ON DELETE SET NULL,
   requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   scheduled_to TIMESTAMP DEFAULT NULL,
   deployed_at TIMESTAMP DEFAULT NULL,
@@ -116,5 +116,9 @@ CREATE TABLE IF NOT EXISTS orders (
   total_price DECIMAL NOT NULL,
   customer_rating DECIMAL DEFAULT NULL,
   customer_feedback TEXT DEFAULT NULL,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cart_uuid TEXT NOT NULL
 );
+
+CREATE INDEX cart ON orders (cart_uuid);
+CREATE INDEX sp_name ON product_services (name);

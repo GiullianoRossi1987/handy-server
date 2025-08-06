@@ -70,6 +70,22 @@ func GetProductServiceOrders(productSericeId int32, conn *pgxpool.Conn) ([]types
 	return orders, nil
 }
 
+func GetCartOrders(cartUUID string, conn *pgxpool.Conn) ([]types.Order, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM orders WHERE cart_uuid = $1;",
+		cartUUID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.Order])
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
 func AddOrder(order types.Order, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -91,7 +107,8 @@ func AddOrder(order types.Order, conn *pgxpool.Conn) (*int32, error) {
       quantity_by_time, 
       total_price, 
       customer_rating, 
-      customer_feedback
+      customer_feedback,
+			cart_uuid
       )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id;`,
 		order.IdProductService,
@@ -108,6 +125,7 @@ func AddOrder(order types.Order, conn *pgxpool.Conn) (*int32, error) {
 		order.TotalPrice,
 		order.CustomerRating,
 		order.CustomerFeedback,
+		order.CartUUID,
 	).Scan(&id); err != nil {
 		tx.Rollback(context.Background())
 		return nil, err

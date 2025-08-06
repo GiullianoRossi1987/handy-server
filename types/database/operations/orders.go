@@ -19,4 +19,5 @@ type Order struct {
 	CustomerRating   *float32
 	CustomerFeedback *string
 	UpdatedAt        time.Time
+	CartUUID         string
 }

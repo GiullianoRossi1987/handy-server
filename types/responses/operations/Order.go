@@ -24,6 +24,7 @@ type OrderResponse struct {
 	CustomerRating   *float32   `json:"rating,omitempty"`
 	CustomerFeedback *string    `json:"feedback,omitempty" binding:"required"`
 	UpdatedAt        time.Time  `json:"updated_at"`
+	CartUUID         string     `json:"cart_id" binding:"required"`
 }
 
 func SerializeOrderRecord(record *db.Order) *OrderResponse {
@@ -46,6 +47,7 @@ func SerializeOrderRecord(record *db.Order) *OrderResponse {
 		CustomerRating:   record.CustomerRating,
 		CustomerFeedback: record.CustomerFeedback,
 		UpdatedAt:        record.UpdatedAt,
+		CartUUID:         record.CartUUID,
 	}
 }
 

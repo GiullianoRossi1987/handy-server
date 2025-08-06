@@ -75,7 +75,7 @@ func AddOrderHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, serial.IdReturing{Id: *id})
+		c.JSON(http.StatusCreated, serial.IdReturing{Id: *id})
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -101,7 +101,7 @@ func UpdateOrderHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.Status(http.StatusOK)
+		c.Status(http.StatusNoContent)
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -122,7 +122,7 @@ func DeleteOrderHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.Status(http.StatusOK)
+		c.Status(http.StatusNoContent)
 	}
 	return gin.HandlerFunc(fn)
 }

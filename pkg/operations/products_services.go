@@ -31,6 +31,22 @@ func GetWorkerProdSer(workerId int32, conn *pgxpool.Conn) ([]types.ProductServic
 	return results, nil
 }
 
+func SearchService(search string, conn *pgxpool.Conn) ([]types.ProductService, error) {
+	rows, err := conn.Query(
+		context.Background(),
+		"SELECT * FROM products_services WHERE name LIKE $1;",
+		search,
+	)
+	if err != nil {
+		return nil, err
+	}
+	results, err := pgx.CollectRows(rows, pgx.RowToStructByPos[types.ProductService])
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 func AddProdSer(prodser types.ProductService, conn *pgxpool.Conn) (*int32, error) {
 	tx, err := conn.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

@@ -110,6 +110,24 @@ func DeletePSHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
+func SearchPSHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		search := c.Param("search")
+		response, err := services.SearchProdSer(pool, search)
+		if err != nil {
+			strerr := string(err.Error())
+			c.String(http.StatusNotFound, "Couldn't find Product/Service by Id. "+utils.Coalesce(&strerr, "No errors found"))
+			return
+		}
+		if len(response) == 0 {
+			c.Status(http.StatusNoContent)
+			return
+		}
+		c.JSON(http.StatusOK, response)
+	}
+	return gin.HandlerFunc(fn)
+}
+
 func RoutePS(router gin.IRouter, pool *pgxpool.Pool) {
 	router.GET("/worker/catalog/:id", GetWorkerPSHandler(pool)) // [ ] Maybe change that to use the uuid in the future
 	router.GET("/product-service/:id", GetPSByIdHandler(pool))
