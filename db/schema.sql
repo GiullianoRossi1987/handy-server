@@ -99,7 +99,6 @@ CREATE TABLE IF NOT EXISTS product_services (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- TODO check if the structures are compliant with this new exclusion model for the orders
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL UNIQUE,
   id_product_service INT REFERENCES product_services(id) ON DELETE SET NULL,
@@ -122,3 +121,6 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX cart ON orders (cart_uuid);
 CREATE INDEX sp_name ON product_services (name);
+
+CREATE INDEX c_uuid ON customers (uuid);
+CREATE INDEX w_uuid ON workers (uuid);

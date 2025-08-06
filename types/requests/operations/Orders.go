@@ -3,6 +3,9 @@ package types
 import (
 	"time"
 	db "types/database/operations"
+	"utils"
+
+	"github.com/google/uuid"
 )
 
 type OrderBody struct {
@@ -20,7 +23,7 @@ type OrderBody struct {
 	TotalPrice       float32    `json:"total" binding:"required"`
 	CustomerRating   *float32   `json:"rating" binding:"required"`
 	CustomerFeedback *string    `json:"feedback" binding:"required"`
-	CartUUID         string     `json:"cartId" binding:"required"` // The client should create the uuid and then take care of them by orders
+	CartUUID         *string    `json:"cartId"`
 }
 
 func (o *OrderBody) ToRecord() *db.Order {
@@ -42,6 +45,6 @@ func (o *OrderBody) ToRecord() *db.Order {
 		TotalPrice:       o.TotalPrice,
 		CustomerRating:   o.CustomerRating,
 		CustomerFeedback: o.CustomerFeedback,
-		CartUUID:         o.CartUUID,
+		CartUUID:         utils.Coalesce(o.CartUUID, uuid.NewString()),
 	}
 }

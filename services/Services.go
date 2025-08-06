@@ -12,5 +12,3 @@ func GetConnByEnv() (*pgxpool.Pool, error) {
 	cn.FromEnv()
 	return db.GeneratePool(cn)
 }
-
-// func connect() (pgxpool.Pool)

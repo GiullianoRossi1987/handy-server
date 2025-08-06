@@ -5,7 +5,6 @@ import (
 	services "services/operations"
 	"strconv"
 	requests "types/requests/operations"
-	serial "types/serializables"
 	"utils"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +62,11 @@ func GetWorkerOrdersHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
+type OrderIdAndCart struct {
+	Id   int32
+	cart string
+}
+
 func AddOrderHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		content := requests.OrderBody{}
@@ -75,7 +79,7 @@ func AddOrderHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusCreated, serial.IdReturing{Id: *id})
+		c.JSON(http.StatusCreated, OrderIdAndCart{Id: *id})
 	}
 	return gin.HandlerFunc(fn)
 }
