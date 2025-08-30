@@ -2,6 +2,7 @@ package services
 
 import (
 	usr "pkg/users"
+	satellites "services/satellites"
 	requests "types/requests/users"
 	responses "types/responses/users"
 
@@ -40,7 +41,23 @@ func GetCustomerByUUID(pool *pgxpool.Pool, uuid string) (*responses.CustomerResp
 		return nil, nil
 	}
 	conn.Release()
-	return responses.SerializeCustomerResponse(data), nil
+	phones, err := satellites.GetCustomerPhones(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	emails, err := satellites.GetCustomerEmails(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := satellites.GetCustomerAddresses(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	response := responses.SerializeCustomerResponse(data)
+	response.Emails = emails
+	response.Phones = phones
+	response.Addresses = addrs
+	return response, nil
 }
 
 func AddCustomer(pool *pgxpool.Pool, req requests.UpdateUserRequest, usr_id int32) (*int32, error) {

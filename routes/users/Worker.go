@@ -102,3 +102,5 @@ func RouteWorkers(router gin.IRouter, pool *pgxpool.Pool) {
 	router.DELETE("/worker/delete/:uuid", DeleteWorkerHandler(pool))
 	router.PUT("/worker/update/:uuid", UpdateWorkerHandler(pool))
 }
+
+// TODO: DEFINE A PATTERN FOR THE URLs

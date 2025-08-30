@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"time"
 	types "types/database/operations"
 	serial "types/responses"
 
@@ -55,14 +54,12 @@ func toTable(order types.Order) {
 
 }
 
-func OrderToPDF(order *types.Order) (string, error) {
+func OrderToPDF(order *serial.ComposedOrderResponse) (string, error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
-	ts_gen := time.Now()
+	// ts_gen := time.Now()
 	out := "order_reports/test.pdf"
 	pdfSetup(pdf)
-	pdf.Cell(40, 10, "testing")
-	pdf.Line(0, 0, 210, 298)
-	pdf.Cell(40, 20, "Generated at - "+ts_gen.Format(time.DateTime))
+	header(pdf, *order)
 	err := pdf.OutputFileAndClose(out)
 	return out, err
 }

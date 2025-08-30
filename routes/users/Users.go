@@ -108,5 +108,6 @@ func RouteUsers(router gin.IRouter, pool *pgxpool.Pool) {
 	router.POST("/user/add", AddUserHandler(pool))
 	router.GET("/user/get-login/:login", GetUserByLogin(pool))
 	router.POST("/user/login", LoginWithUser(pool))
-	router.PUT("/user/update/:id", UpdateUser(pool))
+	router.PUT("/user/:id", UpdateUser(pool))
+	router.DELETE(("/user/:id"), DeleteUser(pool))
 }

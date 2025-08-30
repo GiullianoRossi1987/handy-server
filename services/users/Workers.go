@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	usr "pkg/users"
+	satellites "services/satellites"
 	requests "types/requests/users"
 	responses "types/responses/users"
 
@@ -22,7 +23,23 @@ func GetWorkerByUUID(pool *pgxpool.Pool, uuid string) (*responses.WorkerResponse
 	if data == nil {
 		return nil, nil
 	}
-	return responses.SerializeWorkerResponse(data), nil
+	phones, err := satellites.GetWorkerPhones(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	emails, err := satellites.GetWorkerEmails(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err := satellites.GetWorkerAddresses(pool, data.UUID)
+	if err != nil {
+		return nil, err
+	}
+	response := responses.SerializeWorkerResponse(data)
+	response.Emails = emails
+	response.Phones = phones
+	response.Addresses = addrs
+	return response, nil
 }
 
 func AddWorker(pool *pgxpool.Pool, req requests.UpdateUserRequest, usrid int32) (*int32, error) {
