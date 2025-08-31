@@ -174,5 +174,12 @@ func UpdateWReport(pool *pgxpool.Pool) gin.HandlerFunc {
 }
 
 func RouteReports(router gin.IRouter, pool *pgxpool.Pool) {
-
+	router.GET("/customer/reports/:id", GetCReports(pool))
+	router.GET("/worker/reports/:id", GetWReports(pool))
+	router.POST("/customer/report", AddCReportHandler(pool))
+	router.POST("/worker/report", AddWReportHandler(pool))
+	router.PUT("/customer/report/:id", UpdateCReport(pool))
+	router.PUT("/worker/report/:id", UpdateWReport(pool))
+	router.DELETE("/customer/report/:id", DeleteCReportHandler(pool))
+	router.DELETE("/worker/report/:id", DeleteWReportHandler(pool))
 }
