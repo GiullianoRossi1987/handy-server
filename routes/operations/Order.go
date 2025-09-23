@@ -45,6 +45,19 @@ func GetCustomerOrdersHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
+func GetCartOrders(pool *pgxpool.Pool) gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		cart := c.Param("cart")
+		order, err := services.GetCartOrders(pool, cart)
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, order)
+	}
+	return gin.HandlerFunc(fn)
+}
+
 func GetWorkerOrdersHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -135,6 +148,7 @@ func RouteOrders(router gin.IRouter, pool *pgxpool.Pool) {
 	router.GET("/order/:id", GetOrderByIdHandler(pool))
 	router.GET("/customer/orders/:id/", GetCustomerOrdersHandler(pool))
 	router.GET("/worker/orders/:id", GetWorkerOrdersHandler(pool))
+	router.GET("/order/cart/:cart", GetCartOrders(pool))
 	router.POST("/order/", AddOrderHandler(pool))
 	router.PUT("/order/:id", UpdateOrderHandler(pool))
 	router.DELETE("/order/:id", DeleteOrderHandler(pool))

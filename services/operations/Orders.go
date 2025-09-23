@@ -63,6 +63,25 @@ func GetCustomerOrders(pool *pgxpool.Pool, customerId int32) ([]responses.OrderR
 	return data, nil
 }
 
+func GetCartOrders(pool *pgxpool.Pool, cartUUID string) ([]responses.OrderResponse, error) {
+	conn, err := pool.Acquire(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	records, err := op.GetCartOrders(cartUUID, conn)
+	conn.Release()
+	if err != nil {
+		return nil, err
+	}
+	data := utils.MapCar(
+		records,
+		func(record types.Order) responses.OrderResponse {
+			return *responses.SerializeOrderRecord(&record)
+		},
+	)
+	return data, nil
+}
+
 func PlaceOrder(pool *pgxpool.Pool, req requests.OrderBody) (*int32, error) {
 	conn, err := pool.Acquire(context.Background())
 	if err != nil {
