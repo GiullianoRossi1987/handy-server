@@ -148,7 +148,7 @@ func RouteOrders(router gin.IRouter, pool *pgxpool.Pool) {
 	router.GET("/order/:id", GetOrderByIdHandler(pool))
 	router.GET("/customer/orders/:id/", GetCustomerOrdersHandler(pool))
 	router.GET("/worker/orders/:id", GetWorkerOrdersHandler(pool))
-	router.GET("/order/cart/:cart", GetCartOrders(pool))
+	router.GET("/orders/cart/:cart", GetCartOrders(pool))
 	router.POST("/order/", AddOrderHandler(pool))
 	router.PUT("/order/:id", UpdateOrderHandler(pool))
 	router.DELETE("/order/:id", DeleteOrderHandler(pool))
