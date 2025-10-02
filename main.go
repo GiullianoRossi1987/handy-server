@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"pkg"
 	routes "routes"
 	operations "routes/operations"
@@ -15,6 +16,7 @@ import (
 )
 
 func main() {
+	port := os.Args[1]
 	config := types.PsConfig{}
 	config.FromEnv()
 	fmt.Println(config.Db)
@@ -23,7 +25,7 @@ func main() {
 		panic(err)
 	}
 	router := gin.Default()
-	if err := router.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
+	if err := router.SetTrustedProxies([]string{"*"}); err != nil {
 		panic(err)
 	}
 	routes.SetRouter(router)
@@ -41,5 +43,5 @@ func main() {
 
 	operations.RouteOrders(router, pool)
 	operations.RoutePS(router, pool)
-	router.Run("localhost:8080")
+	router.Run(fmt.Sprintf("0.0.0.0:%s", port))
 }
