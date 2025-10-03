@@ -3,22 +3,36 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_DB: docker
-      PG_USER: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: teste
     volumes:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 6611:5432
+    networks:
+      - handysv
   api:
     image: golang:latest
     command: "./main 8080"
+    working_dir: /app
     build: 
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
     depends_on:
-      - db
+      db:
+        condition: service_started
     ports:
-      - "8080:8080"
+      - 8080:8080
     volumes:
       - ./:/app
+    networks:
+      - handysv
+    environment:
+      - HOSTNAME=db
+      - USERNAME=postgres
+      - PASSWORD=teste
+      - DATABASE=docker
+      - PORT=5432
+networks:
+  handysv:
+    driver: bridge

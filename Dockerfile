@@ -4,6 +4,6 @@ WORKDIR /app
 
 # COPY go.mod go.sum ./
 RUN go mod download
+RUN go build main
 
-COPY . . 
-RUN go build
+COPY . .

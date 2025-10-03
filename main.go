@@ -19,13 +19,13 @@ func main() {
 	port := os.Args[1]
 	config := types.PsConfig{}
 	config.FromEnv()
-	fmt.Println(config.Db)
+	fmt.Println(config.Host)
 	pool, err := pkg.GeneratePool(config)
 	if err != nil {
 		panic(err)
 	}
 	router := gin.Default()
-	if err := router.SetTrustedProxies([]string{"*"}); err != nil {
+	if err := router.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
 		panic(err)
 	}
 	routes.SetRouter(router)

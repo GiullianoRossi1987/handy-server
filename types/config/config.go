@@ -7,6 +7,7 @@ type PsConfig struct {
 	Username string
 	Password string
 	Db       string
+	Port     string
 }
 
 func (c *PsConfig) FromEnv() {
@@ -14,4 +15,5 @@ func (c *PsConfig) FromEnv() {
 	c.Username = os.Getenv("USERNAME")
 	c.Password = os.Getenv("PASSWORD")
 	c.Db = os.Getenv("DATABASE")
+	c.Port = os.Getenv("PORT")
 }
