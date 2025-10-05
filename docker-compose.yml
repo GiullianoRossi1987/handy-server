@@ -12,7 +12,7 @@ services:
     networks:
       - handysv
   api:
-    image: golang:latest
+    image: alpine:latest
     command: "./main 8080"
     working_dir: /app
     build: 
@@ -23,8 +23,6 @@ services:
         condition: service_started
     ports:
       - 8080:8080
-    volumes:
-      - ./:/app
     networks:
       - handysv
     environment:
