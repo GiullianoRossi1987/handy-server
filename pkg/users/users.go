@@ -69,7 +69,11 @@ func DeleteUserById(id int, conn *pgxpool.Conn) error {
 	if err != nil {
 		return err
 	}
-	commandTag, err := conn.Exec(context.Background(), "DELETE FROM user WHERE id = $1", id)
+	commandTag, err := conn.Exec(context.Background(), "DELETE FROM users WHERE id = $1::integer", id)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
 	if commandTag.RowsAffected() != 1 {
 		tx.Rollback(context.Background())
 		return &errors.UnexpectedDBChangeBehaviourError{
@@ -78,10 +82,6 @@ func DeleteUserById(id int, conn *pgxpool.Conn) error {
 			ExpectedChangedLines: 1,
 			ChangedLines:         int(commandTag.RowsAffected()),
 		}
-	}
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		tx.Rollback(context.Background())

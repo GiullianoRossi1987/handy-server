@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"testing"
 	types "types/config"
 
 	crypt "golang.org/x/crypto/bcrypt"
@@ -13,8 +14,24 @@ func GenerateDatabaseConfig() types.PsConfig {
 		Username: os.Getenv("USERNAME"),
 		Password: os.Getenv("PASSWORD"),
 		Db:       os.Getenv("DATABASE"),
+		Port:     os.Getenv("PORT"),
 	}
 }
+
+func MockTestsDatabase(t *testing.T) {
+	t.Setenv("HOSTNAME", "localhost")
+	t.Setenv("USERNAME", "postgres")
+	t.Setenv("PASSWORD", "teste")
+	t.Setenv("DATABASE", "docker")
+	t.Setenv("PORT", "6611")
+}
+
+// func MockMainTestDatabase(m *testing.M) {
+// 	m.Setenv("HOSTNAME", "db")
+// 	m.Setenv("USERNAME", "postgres")
+// 	m.Setenv("PASSWORD", "teste")
+// 	m.Setenv("DATABASE", "docker")
+// }
 
 // Why GO doesnt ship without a '??' coalesce function? I gotta do this ¬~¬
 func Coalesce[T any](value *T, default_val T) T {
